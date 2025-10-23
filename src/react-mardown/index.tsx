@@ -105,7 +105,7 @@ const MarkdownView = ({ children }: { children: string }) => {
       remarkPlugins={[remarkMath, remarkGfm]}
       rehypePlugins={[rehypeKatex]}
       components={components}
-      className="h-fit"
+      // className="h-fit"
     >
       {children}
     </ReactMarkdown>
