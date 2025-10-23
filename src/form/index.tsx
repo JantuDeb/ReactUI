@@ -43,7 +43,7 @@ import { RadioGroupStyled } from "../inputs/radio-group"
 import { Label } from "./label"
 import { FileInput } from "../file-upload/file-input"
 import { cva } from "class-variance-authority"
-import MarkdownInput from "../inputs/markdown-input"
+import { MarkdownInput } from "../inputs/markdown-input"
 import { Plus, Trash2 } from "lucide-react"
 
 // const Textarea = React.forwardRef<HTMLTextAreaElement, any>((props, ref) => (

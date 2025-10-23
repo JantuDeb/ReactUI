@@ -1,3 +1,3 @@
-export { Sidebar, SidenavMenu } from './sidebar'
-export { SidenavMenu as default } from './sidenav-menu'
+export { Sidebar } from './sidebar'
+export { SideNavMain  } from './sidenav-menu'
 export type * from './types'

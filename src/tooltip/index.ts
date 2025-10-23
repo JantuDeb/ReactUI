@@ -2,5 +2,5 @@ export {
   default as Tooltip,
   TooltipTrigger,
   TooltipContent,
-  TooltipProvider,
+  // TooltipProvider,
 } from './tooltip'

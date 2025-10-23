@@ -61,5 +61,5 @@ export function Content({ children, className, side = "top", ...contentProps }: 
 
 Tooltip.Trigger = Trigger
 Tooltip.Content = Content
-
+export {Tooltip, Trigger as TooltipTrigger, Content as TooltipContent}
 export default Tooltip

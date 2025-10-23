@@ -440,7 +440,7 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
   )
 }
 
-export default MarkdownInput
+export { MarkdownInput }
 
 // Export types for use in other components
 export type { MarkdownInputProps, ImageUploadResult }

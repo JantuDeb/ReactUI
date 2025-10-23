@@ -143,3 +143,4 @@ export function SideNavMain({
 
   return <>{items.map(renderMenuItem)}</>
 }
+
