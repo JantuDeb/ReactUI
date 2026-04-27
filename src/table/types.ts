@@ -432,7 +432,6 @@ export interface TColumnDef<TData extends TRowData, TValue = unknown>
     table: TTableInstance<TData>
   }) => ReactNode
   filterFn?: TFilterFn<TData>
-  //TODO:implement
   filterSelectOptions?: Options
   filterVariant?:
     | "autocomplete"
@@ -668,6 +667,10 @@ export interface TTableOptions<TData extends TRowData>
   enablePagination?: boolean
   enableRowActions?: boolean
   enableRowDragging?: boolean
+  /**
+   * Callback fired when a table row is clicked. Makes the row appear clickable with a pointer cursor.
+   */
+  onRowClick?: (originalRow: TData, event: React.MouseEvent<HTMLTableRowElement>) => void
   enableRowNumbers?: boolean
   enableRowOrdering?: boolean
   enableRowSelection?: ((row: TRow<TData>) => boolean) | boolean

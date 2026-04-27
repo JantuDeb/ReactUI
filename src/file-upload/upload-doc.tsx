@@ -78,7 +78,7 @@ function List({ fileStateList }: { fileStateList: Array<FileState> }) {
 import { FileInput } from "./file-input"
 
 export function FileuploadExample() {
-  const [value, setValue] = React.useState()
+  const [value, setValue] = React.useState<any>()
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 p-4">
       <div>

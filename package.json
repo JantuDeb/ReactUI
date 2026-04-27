@@ -35,9 +35,9 @@
       "import": "./dist/collapsible/index.js",
       "types": "./dist/collapsible/index.d.ts"
     },
-    "./components": {
-      "import": "./dist/components/index.js",
-      "types": "./dist/components/index.d.ts"
+    "./command": {
+      "import": "./dist/command/index.js",
+      "types": "./dist/command/index.d.ts"
     },
     "./dialogs": {
       "import": "./dist/dialogs/index.js",
@@ -102,6 +102,26 @@
     "./types": {
       "import": "./dist/types/index.js",
       "types": "./dist/types/index.d.ts"
+    },
+    "./badge": {
+      "import": "./dist/badge/index.js",
+      "types": "./dist/badge/index.d.ts"
+    },
+    "./page-header": {
+      "import": "./dist/page-header/index.js",
+      "types": "./dist/page-header/index.d.ts"
+    },
+    "./separator": {
+      "import": "./dist/separator/index.js",
+      "types": "./dist/separator/index.d.ts"
+    },
+    "./stats-bar": {
+      "import": "./dist/stats-bar/index.js",
+      "types": "./dist/stats-bar/index.d.ts"
+    },
+    "./ui-states": {
+      "import": "./dist/ui-states/index.js",
+      "types": "./dist/ui-states/index.d.ts"
     }
   },
   "files": [
@@ -132,7 +152,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@tanstack/react-router": "^1.133.3",
+
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.12",
     "@uiw/react-md-editor": "^4.0.8",

@@ -1,1 +1,1 @@
-export { Collapsible, CollapsibleTrigger, CollapsibleContent } from './collapsible'
+export * from "./collapsible"

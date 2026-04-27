@@ -8,9 +8,9 @@ type BaseItem = {
 }
 
 export type ItemOption = BaseItem & {
-  type?: "item",
-  buttonProps?:ButtonVariantProps
-} 
+  type?: "item"
+  buttonProps?: ButtonVariantProps
+}
 
 export type CheckboxOption = BaseItem & {
   type: "checkbox"

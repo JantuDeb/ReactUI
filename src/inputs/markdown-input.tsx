@@ -16,8 +16,6 @@ import Spinner from "../loaders/spinner"
 import MarkdownView from "../react-mardown"
 import { FileInput, FileInputProps } from "../file-upload/file-input"
 import { Modal } from "../dialogs/modal"
-// import { apiClientv2 } from "src/api/api-client" // TODO: Remove API dependency
-import { useTheme } from "@components/theme-provider"
 
 // Types
 interface ImageUploadResult {
@@ -31,7 +29,7 @@ interface MarkdownInputProps {
   label?: string
   errorText?: string
   placeholder?: string
-  height?: number
+  height?: number | string
   preview?: "edit" | "live" | "preview"
   disabled?: boolean
   required?: boolean
@@ -182,16 +180,7 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
         setUploading(true)
         let result: ImageUploadResult | null = null
 
-        if (uploadUrl) {
-          // Use apiClientv2 for upload
-          const formData = new FormData()
-          formData.append("file", file)
-          const response = await apiClientv2.post(uploadUrl, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          })
-          result = response.data as ImageUploadResult
-        } else if (onImageUpload) {
-          // Fallback to onImageUpload prop
+        if (onImageUpload) {
           result = await onImageUpload(file)
         } else {
           console.warn("Image upload handler not provided")
@@ -348,8 +337,8 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
       }
     >
       {uploading && (
-        <p className="flex items-center">
-          <Spinner />
+        <p className="flex items-center py-1 gap-2 ">
+          <Spinner size="sm" />
           Uploading image...
         </p>
       )}
@@ -440,7 +429,7 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
   )
 }
 
-export { MarkdownInput }
+export default MarkdownInput
 
 // Export types for use in other components
 export type { MarkdownInputProps, ImageUploadResult }

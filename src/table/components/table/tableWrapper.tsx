@@ -24,7 +24,7 @@ export const TableWrapper = <TData extends TRowData>({ table }: TableWrapper<TDa
 
   return (
     <div
-      className="overflow-hidden transition-all duration-100 ease-in-out bg-background"
+      className="overflow-visible transition-all duration-100 ease-in-out bg-background"
       //   elevation={2}
       //   onKeyDown={(e) => e.key === "Escape" && table.setIsFullScreen(false)}
       //   {...paperProps}

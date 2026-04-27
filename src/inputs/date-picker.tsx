@@ -5,6 +5,8 @@ import { Popover, PopoverContent, PopoverProps, PopoverTrigger, PopoverContentPr
 import { format } from "date-fns/format"
 import { ChevronDownIcon, ClockIcon } from "lucide-react"
 import * as React from "react"
+import { Input } from "./input"
+import { Label } from "../form/label"
 
 export type { DateRange } from "react-day-picker"
 
@@ -46,6 +48,7 @@ export function DatePicker({
   mode = "single",
   ...calendarProps
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false)
   // @ts-expect-error
   const { selected } = calendarProps
   const displayValue = React.useMemo(() => {
@@ -62,11 +65,11 @@ export function DatePicker({
   }, [selected, mode, formatString])
 
   return (
-    <Popover modal={modal}>
-      <PopoverTrigger asChild>
+    <Popover modal={modal} open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild inert={open}>
         <Button
           className={cn(
-            "w-full max-w-[16rem] justify-start text-left font-normal",
+            "w-full justify-start text-left font-normal",
             !displayValue && "text-muted-foreground",
             className,
           )}
@@ -75,12 +78,12 @@ export function DatePicker({
           {icon}
           {<span className="truncate">{displayValue || placeholder}</span>}
           {showTimeInput && (
-            <>
-              <ClockIcon className="ml-2" />
-              <span className="ml-1">{timeValue}</span>
-            </>
+            <p className="ml-auto flex gap-1 w-fit items-center">
+              <ClockIcon />
+              <span>{timeValue}</span>
+            </p>
           )}
-          <span className="ml-auto">
+          <span className={!showTimeInput ? "ml-auto" : ""}>
             <ChevronDownIcon />
           </span>
         </Button>
@@ -88,17 +91,20 @@ export function DatePicker({
       <PopoverContent className="w-auto p-0" {...{ side, align: align || "start", alignOffset, sideOffset }}>
         {/* @ts-expect-error*/}
         <Calendar mode={mode} selected={selected} autoFocus {...calendarProps} />
-        {/* {showTimeInput && (
-          <div className="mt-4 flex items-center gap-2">
-            <ClockIcon className="size-4 text-muted-foreground" />
-            <input
+
+        {showTimeInput && (
+          <Label className="px-2 flex-col items-start pb-2">
+            <span className="block">Time</span>
+            <Input
               type="time"
-              value={timeValue}
+              id="time-from"
+              step="1"
+              defaultValue="09:30:00"
+              className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
               onChange={(e) => onTimeChange?.(e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
             />
-          </div>
-        )} */}
+          </Label>
+        )}
       </PopoverContent>
     </Popover>
   )

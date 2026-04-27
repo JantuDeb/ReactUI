@@ -69,7 +69,7 @@ export const TopToolbar = <TData extends TRowData>({ table }: TopToolbarProps<TD
       {/* {["both", "top"].includes(positionToolbarDropZone ?? "") && <MRT_ToolbarDropZone table={table} />} */}
       <Box
         className={cn(
-          "flex items-start box-border gap-2 justify-between py-2 top-0 right-0 w-full",
+          "flex items-start box-border gap-2 justify-between pt-2 pb-0 top-0 right-0 w-full",
           stackAlertBanner ? "relative" : "absolute",
         )}
       >

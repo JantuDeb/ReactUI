@@ -4,9 +4,56 @@ import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import ReactMarkdown from "react-markdown"
 import { Components } from "react-markdown/lib"
+import ReactPlayer from "react-player/youtube"
 // import "katex/dist/katex.min.css"
 
+const isYouTubeUrl = (url?: string) => {
+  if (!url) return false
+  return /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/)/i.test(url)
+}
+const isVideoFile = (url?: string) => {
+  if (!url) return false
+  return /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url)
+}
+
 const components: Components = {
+  // links: if link is video or youtube, render player
+  a: ({ href, children, ...props }) => {
+    if (!href) return <a {...props}>{children}</a>
+
+    // YouTube
+    if (isYouTubeUrl(href)) {
+      // ReactPlayer (client-only) — render placeholder on server
+      if (typeof window === "undefined") {
+        return (
+          <a href={href} target="_blank" rel="noreferrer" {...props}>
+            {children}
+          </a>
+        )
+      }
+      return (
+        <div className="my-2">
+          <ReactPlayer url={href} controls width="100%" />
+        </div>
+      )
+    }
+
+    // direct video file
+    if (isVideoFile(href)) {
+      return (
+        <div className="my-2">
+          <video src={href} controls className="max-w-full h-auto rounded" />
+        </div>
+      )
+    }
+
+    // default link
+    return (
+      <a href={href} target="_blank" rel="noreferrer" {...props} className="text-primary underline">
+        {children}
+      </a>
+    )
+  },
   img: ({ src, alt, node, ...props }) => (
     <img src={src} alt={alt} className="max-w-full h-auto rounded border my-2" {...props} />
   ),
@@ -105,7 +152,7 @@ const MarkdownView = ({ children }: { children: string }) => {
       remarkPlugins={[remarkMath, remarkGfm]}
       rehypePlugins={[rehypeKatex]}
       components={components}
-      // className="h-fit"
+      className="h-fit"
     >
       {children}
     </ReactMarkdown>

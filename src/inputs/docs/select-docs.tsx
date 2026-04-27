@@ -1,5 +1,6 @@
 import { User, Settings, LogOut } from "lucide-react"
 import SelectStyled from "../select"
+import { MultiSelect, MultiSelectProps } from "../multi-select"
 import { MenuOption } from "../../types/menu-option"
 
 // Basic options: only one large item
@@ -63,9 +64,40 @@ const groupedOptions: MenuOption[] = [
   },
 ]
 
+const multiSelectOptions: MultiSelectProps["options"] = [
+  { label: "Apple", id: "apple" },
+  { label: "Banana", id: "banana" },
+  { label: "Blueberry", id: "blueberry" },
+  { label: "Grapes", id: "grapes" },
+  { label: "Pineapple", id: "pineapple" },
+]
+
+const multiSelectGroupedOptions: MultiSelectProps["options"] = [
+  {
+    label: "Fruits",
+    id: "group-fruit",
+    type: "group",
+    options: [
+      { label: "Apple", id: "apple" },
+      { label: "Banana", id: "banana" },
+      { label: "Blueberry", id: "blueberry" },
+    ],
+  },
+  {
+    label: "Vegetables",
+    type: "group",
+    id: "group-vegetables",
+    options: [
+      { label: "Carrot", id: "carrot" },
+      { label: "Broccoli", id: "broccoli" },
+      { label: "Spinach", id: "spinach" },
+    ],
+  },
+]
+
 export default function SelectExample() {
   return (
-    <div className="flex gap-6 items-center">
+    <div className="flex gap-6 items-center w-full flex-col">
       <SelectStyled
         options={basicOptions}
         placeholder="Select profile"
@@ -91,6 +123,18 @@ export default function SelectExample() {
         options={groupedOptions}
         placeholder="Choose an item"
         onValueChange={(id) => console.log("Selected:", id)}
+      />
+
+      <MultiSelect
+        options={multiSelectOptions}
+        onValueChange={(values) => console.log("Multi-select values:", values)}
+        placeholder="Select multiple fruits"
+      />
+
+      <MultiSelect
+        options={multiSelectGroupedOptions}
+        onValueChange={(values) => console.log("Multi-select grouped values:", values)}
+        placeholder="Select from grouped options"
       />
     </div>
   )

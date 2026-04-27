@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef } from "react"
+import { memo, useCallback, useMemo, useRef } from "react"
 
 import { type VirtualItem } from "@tanstack/react-virtual"
 
@@ -155,6 +155,7 @@ TableBodyRowProps<TData>) => {
       enableStickyHeader,
       layoutMode,
       memoMode,
+      onRowClick,
       theme: {
         // baseBackgroundColor,
         pinnedRowBackgroundColor,
@@ -229,6 +230,14 @@ TableBodyRowProps<TData>) => {
 
   const rowHeight = /* customRowHeight || */ defaultRowHeight
 
+  const isRowClickable = !!onRowClick
+  const handleRowClick = useCallback(
+    (e: React.MouseEvent<HTMLTableRowElement>) => {
+      onRowClick?.(row.original, e)
+    },
+    [onRowClick, row],
+  )
+
   const handleDragEnter = (_e: any) => {
     if (enableRowOrdering && draggingRow) {
       setHoveredRow(row)
@@ -262,6 +271,7 @@ TableBodyRowProps<TData>) => {
         data-index={renderDetailPanel ? staticRowIndex * 2 : staticRowIndex}
         data-pinned={!!isRowPinned || undefined}
         data-selected={isRowSelected || undefined}
+        onClick={isRowClickable ? handleRowClick : undefined}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         ref={(node: HTMLTableRowElement) => {
@@ -272,6 +282,7 @@ TableBodyRowProps<TData>) => {
         }}
         className={cn(
           "table-row group w-full box-border",
+          isRowClickable && "cursor-pointer",
           isRowPinned
             ? "opacity-95"
             : isDraggingRow || isHoveredRow

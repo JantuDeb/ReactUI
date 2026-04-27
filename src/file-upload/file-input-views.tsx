@@ -125,8 +125,8 @@ export function TableView({ fileStates }: ViewProps) {
   //   }).format(bytes)
 
   return (
-    <div className="overflow-hidden rounded-md border">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-md border w-full">
+      <table className="table text-sm">
         <thead className="bg-muted/50 text-xs">
           <tr className="border-b">
             <th className="h-9 px-4 py-2 text-left font-medium">Name</th>
@@ -139,13 +139,13 @@ export function TableView({ fileStates }: ViewProps) {
           {fileStates.map((fileState) => (
             <FileUploadItem key={fileState.file.name} value={fileState} asChild>
               <tr className="border-b transition-colors hover:bg-muted/50">
-                <td className="max-w-48 p-1 font-medium">
+                <td className="p-1 font-medium">
                   <span className="flex items-center gap-2">
-                    <FileUploadItemPreview className="size-8 shrink-0" />
-                    <span className="truncate">{fileState.id}</span>
+                    <FileUploadItemPreview className="size-8" />
+                    <span className="truncate">{fileState.file?.name || fileState.id}</span>
                   </span>
                 </td>
-                <td className="p-1 text-muted-foreground shrink-0">{getFileType(fileState.file)}</td>
+                <td className="p-1 text-muted-foreground">{getFileType(fileState.file)}</td>
                 <td className="p-1 text-muted-foreground text-nowrap">{formatBytes(fileState.file.size)}</td>
                 <td className="whitespace-nowrap p-1 text-right">
                   <Button

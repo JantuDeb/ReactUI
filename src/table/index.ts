@@ -1,1 +1,5 @@
-export * from './types'
+export * from "./components/reactTable"
+export * from "./hooks/useTableInstance"
+export * from "./hooks/useTableOptions"
+export * from "./types"
+export * from "./hooks/useReactTable"

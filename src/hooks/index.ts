@@ -1,3 +1,4 @@
-export * from './useIsMobile'
-export * from './useIsomorphicLayoutEffect'
-export * from './useMediaQuery'
+export * from "./useBreakPoints"
+export * from "./useIsMobile"
+export * from "./useIsomorphicLayoutEffect"
+export * from "./useMediaQuery"

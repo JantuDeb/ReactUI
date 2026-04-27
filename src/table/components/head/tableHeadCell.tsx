@@ -4,9 +4,14 @@ function Sort({ column }: { column: TColumn<any, any> }) {
   const isSorted = column.getIsSorted() as string
 
   return (
-    <span className={cn("w-3 group-hover:opacity-100 ml-auto", !isSorted ? "opacity-0" : "")}>
-      <ArrowUpIcon className={cn("h-2 w-3", isSorted === "asc" ? "opacity-100" : "opacity-50")} />
-      <ArrowDownIcon className={cn("h-2 w-3 ", isSorted === "desc" ? "opacity-100" : "opacity-50")} />
+    <span className={cn("ml-1 shrink-0 group-hover:opacity-100", !isSorted ? "opacity-40" : "opacity-100")}>
+      {isSorted === "asc" ? (
+        <ChevronUpIcon className="h-3.5 w-3.5" />
+      ) : isSorted === "desc" ? (
+        <ChevronDownIcon className="h-3.5 w-3.5" />
+      ) : (
+        <ChevronsUpDownIcon className="h-3.5 w-3.5" />
+      )}
     </span>
   )
 }
@@ -14,11 +19,12 @@ function Sort({ column }: { column: TColumn<any, any> }) {
 import { type DragEvent, useMemo } from "react"
 
 import { type TColumnVirtualizer, type THeader, type TRowData, type TTableInstance } from "../../types"
+import { TableHeadCellFilterContainer } from "./tableHeadCellFilterContainer"
 import { getCommonCellStyles } from "../../utils/style.utils"
 import { parseFromValuesOrFunc } from "../../utils/utils"
 import { cellKeyboardShortcuts } from "../../utils/cell.utils"
 import { cn } from "../../../lib/utils"
-import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
+import { ChevronUpIcon, ChevronDownIcon, ChevronsUpDownIcon } from "lucide-react"
 
 export interface TableHeadCellProps<TData extends TRowData> {
   columnVirtualizer?: TColumnVirtualizer
@@ -192,7 +198,7 @@ TableHeadCellProps<TData>) => {
         tHead,
         tHeadSticky,
         // isLastPinnedCol ? "" : "border-r",
-        column.getCanSort() ? "cursor-pointer" : "",
+        column.getCanSort() ? "cursor-pointer hover:bg-muted transition-colors" : "",
         // isDisplayColumn ? "justify-center items-center" : "py-2",
         "relative group",
         layoutMode?.startsWith("grid") ? "flex-col" : undefined,
@@ -235,7 +241,7 @@ TableHeadCellProps<TData>) => {
       {header.isPlaceholder ? null : (
         <div
           className={cn(
-            "flex items-center relative w-full",
+            "flex items-center relative w-full min-h-4",
             columnDefType === "group"
               ? "justify-center"
               : columnDefType === "display"
@@ -311,9 +317,9 @@ TableHeadCellProps<TData>) => {
               )} */}
         </div>
       )}
-      {/* {columnFilterDisplayMode === "subheader" && column.getCanFilter() && (
-        <MRT_TableHeadCellFilterContainer header={header} table={table} />
-      )} */}
+      {columnFilterDisplayMode === "subheader" && column.getCanFilter() && showColumnFilters && (
+        <TableHeadCellFilterContainer header={header} table={table} />
+      )}
     </th>
   )
 }

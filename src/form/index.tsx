@@ -6,11 +6,10 @@ import {
   useFieldArray,
   FieldValues,
   UseFormReturn,
-  FieldPath,
   useFormContext,
+  useWatch,
 } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { cn } from "../lib/utils"
 
 import {
@@ -19,21 +18,11 @@ import {
   GroupFieldConfig,
   ArrayFieldConfig,
   FormFieldPath,
-  InputFieldConfig,
-  TextareaFieldConfig,
-  CheckboxFieldConfig,
-  SelectFieldConfig,
-  MultiselectFieldConfig,
-  RadioFieldConfig,
-  SwitchFieldConfig,
   SliderFieldConfig,
-  ColorPickerFieldConfig,
-  DatePickerFieldConfig,
-  TimePickerFieldConfig,
   InfoFieldConfig,
-  FormConfig,
   type FormLabel as TFormLabel,
-} from "./types-v2"
+  TiptapEditorFieldConfig,
+} from "./types"
 import { Button } from "../buttons/button"
 import { Input } from "../inputs/input"
 import { Textarea } from "../inputs/textarea"
@@ -43,23 +32,17 @@ import { RadioGroupStyled } from "../inputs/radio-group"
 import { Label } from "./label"
 import { FileInput } from "../file-upload/file-input"
 import { cva } from "class-variance-authority"
-import { MarkdownInput } from "../inputs/markdown-input"
+import MarkdownInput from "../inputs/markdown-input"
+const TiptapEditor = React.lazy(() =>
+  import("tiptap-editor-library").then((mod) => ({ default: mod.Editor })),
+)
+import "tiptap-editor-library/dist/tiptap-editor-library.css"
 import { Plus, Trash2 } from "lucide-react"
-
-// const Textarea = React.forwardRef<HTMLTextAreaElement, any>((props, ref) => (
-//   <textarea ref={ref} {...props} className={cn("border p-2 rounded w-full", props.className)} />
-// ))
-
-// const Checkbox = React.forwardRef<HTMLInputElement, any>(({ checkboxLabel, ...props }, ref) => (
-//   <div className="flex items-center space-x-2">
-//     <input type="checkbox" ref={ref} {...props} id={props.name} className={cn("border", props.className)} />
-//     {checkboxLabel && (
-//       <label htmlFor={props.name} className="text-sm">
-//         {checkboxLabel}
-//       </label>
-//     )}
-//   </div>
-// ))
+import { evaluateCondition, getFieldDefaultValue, unflattenObject } from "./utils"
+import { MultiSelect } from "../inputs/multi-select"
+import { DatePicker } from "../inputs/date-picker"
+import { generateZodSchema } from "./zod-validation"
+import { GroupField } from "./group-field"
 
 const Switch = React.forwardRef<HTMLInputElement, any>(({ switchLabel, ...props }, ref) => (
   <div className="flex items-center space-x-2">
@@ -77,30 +60,6 @@ const Switch = React.forwardRef<HTMLInputElement, any>(({ switchLabel, ...props 
     )}
   </div>
 ))
-
-// const Select = React.forwardRef<HTMLSelectElement, any>(({ options = [], ...props }, ref) => (
-//   <select ref={ref} {...props} className={cn("border p-2 rounded w-full", props.className)}>
-//     {props.placeholder && <option value="">{props.placeholder}</option>}
-//     {options.map((option: any) => (
-//       <option key={option.value} value={option.value}>
-//         {option.label}
-//       </option>
-//     ))}
-//   </select>
-// ))
-
-// const RadioGroup = React.forwardRef<HTMLDivElement, any>(({ options = [], direction = "vertical", ...props }, ref) => (
-//   <div ref={ref} className={cn("space-y-2", direction === "horizontal" && "flex space-x-4 space-y-0")}>
-//     {options.map((option: any) => (
-//       <div key={option.value} className="flex items-center space-x-2">
-//         <input type="radio" id={`${props.name}-${option.value}`} value={option.value} {...props} className="border" />
-//         <label htmlFor={`${props.name}-${option.value}`} className="text-sm">
-//           {option.label}
-//         </label>
-//       </div>
-//     ))}
-//   </div>
-// ))
 
 const Slider = React.forwardRef<HTMLInputElement, any>(({ min = 0, max = 100, step = 1, ...props }, ref) => (
   <input type="range" ref={ref} min={min} max={max} step={step} {...props} className={cn("w-full", props.className)} />
@@ -203,198 +162,6 @@ const InfoComponent = ({
   )
 }
 
-// --- Zod Schema Generation ---
-const generateZodSchema = <TFieldValues extends FieldValues>(
-  fields: FormConfig<TFieldValues>["fields"],
-): z.ZodSchema<any> => {
-  const schemaFields: Record<string, z.ZodTypeAny> = {}
-
-  Object.entries(fields).forEach(([fieldKey, fieldConfig]) => {
-    if (!fieldConfig) return
-
-    let fieldSchema: z.ZodTypeAny = z.any()
-
-    // Base schema based on field type
-    switch (fieldConfig.type) {
-      case "input":
-        // const inputConfig = fieldConfig as InputFieldConfig<TFieldValues>
-        if (fieldConfig.inputType === "email") {
-          fieldSchema = z.string().email("Invalid email format")
-        } else if (fieldConfig.inputType === "number") {
-          fieldSchema = z.coerce.number()
-        } else {
-          fieldSchema = z.string()
-        }
-        break
-      case "file_input":
-        const fileItemSchema = z.object({
-          id: z.string().optional(),
-          url: z.string(),
-          name: z.string()?.optional(),
-          size: z.number().optional(),
-          type: z.string().optional(),
-        })
-
-        const fileSchema = z.instanceof(File)
-        fieldSchema = z.array(z.union([fileSchema, fileItemSchema]))
-        if (fieldConfig.maxFiles && fieldSchema instanceof z.ZodArray) {
-          fieldSchema = fieldSchema.max(fieldConfig.maxFiles)
-        }
-        if (fieldConfig.minFiles && fieldSchema instanceof z.ZodArray) {
-          fieldSchema = fieldSchema.min(fieldConfig.minFiles)
-        }
-        break
-      case "textarea":
-        fieldSchema = z.string()
-        break
-      case "select":
-      case "radio":
-        fieldSchema = z.string()
-        break
-      case "multiselect":
-        fieldSchema = z.array(z.string())
-        break
-      case "checkbox":
-      case "switch":
-        fieldSchema = z.boolean()
-        break
-      case "slider":
-        const sliderConfig = fieldConfig as SliderFieldConfig<TFieldValues>
-        fieldSchema = z.number()
-        if (sliderConfig.min !== undefined && fieldSchema instanceof z.ZodNumber)
-          fieldSchema = fieldSchema.min(sliderConfig.min)
-        if (sliderConfig.max !== undefined && fieldSchema instanceof z.ZodNumber)
-          fieldSchema = fieldSchema.max(sliderConfig.max)
-        break
-      case "color_picker":
-        fieldSchema = z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid color format")
-        break
-      case "date_picker":
-        fieldSchema = z.union([z.string(), z.date()])
-        break
-      case "time_picker":
-        fieldSchema = z.union([z.string(), z.date()])
-        break
-      case "group":
-        const groupConfig = fieldConfig as GroupFieldConfig<TFieldValues, any>
-        fieldSchema = generateZodSchema(groupConfig.fields)
-        break
-      case "array":
-        const arrayConfig = fieldConfig as ArrayFieldConfig<TFieldValues, any>
-        const itemSchema = generateZodSchema(arrayConfig.itemConfig)
-        fieldSchema = z.array(itemSchema)
-        if (arrayConfig.minItems && fieldSchema instanceof z.ZodArray)
-          fieldSchema = fieldSchema.min(arrayConfig.minItems)
-        if (arrayConfig.maxItems && fieldSchema instanceof z.ZodArray)
-          fieldSchema = fieldSchema.max(arrayConfig.maxItems)
-        break
-      case "info":
-        // Info fields don't contribute to schema
-        return
-    }
-
-    // Apply validation rules
-    if (fieldConfig.validation) {
-      const validation = fieldConfig.validation
-
-      if (validation.required) {
-        const message =
-          typeof validation.required === "boolean" ? "This field is required" : validation.required.message
-        if (fieldSchema instanceof z.ZodString || fieldSchema instanceof z.ZodArray) {
-          fieldSchema = fieldSchema.min(1, message)
-        } else if (fieldSchema instanceof z.ZodNumber) {
-          fieldSchema = fieldSchema.refine((val) => val !== undefined && val !== null, {
-            message,
-          })
-        } else if (fieldSchema instanceof z.ZodBoolean) {
-          fieldSchema = fieldSchema.refine((val) => val === true, {
-            message,
-          })
-        }
-      }
-
-      if (validation.min && fieldSchema instanceof z.ZodNumber) {
-        const rule = typeof validation.min === "number" ? validation.min : validation.min.value
-        const message = typeof validation.min === "number" ? `Minimum value is ${rule}` : validation.min.message
-        fieldSchema = fieldSchema.min(rule, message)
-      }
-
-      if (validation.max && fieldSchema instanceof z.ZodNumber) {
-        const rule = typeof validation.max === "number" ? validation.max : validation.max.value
-        const message = typeof validation.max === "number" ? `Maximum value is ${rule}` : validation.max.message
-        fieldSchema = fieldSchema.max(rule, message)
-      }
-
-      if (validation.minLength && fieldSchema instanceof z.ZodString) {
-        const rule = typeof validation.minLength === "number" ? validation.minLength : validation.minLength.value
-        const message =
-          typeof validation.minLength === "number" ? `Minimum length is ${rule}` : validation.minLength.message
-        fieldSchema = fieldSchema.min(rule, message)
-      }
-
-      if (validation.maxLength && fieldSchema instanceof z.ZodString) {
-        const rule = typeof validation.maxLength === "number" ? validation.maxLength : validation.maxLength.value
-        const message =
-          typeof validation.maxLength === "number" ? `Maximum length is ${rule}` : validation.maxLength.message
-        fieldSchema = fieldSchema.max(rule, message)
-      }
-
-      if (validation.pattern) {
-        const pattern = validation.pattern instanceof RegExp ? validation.pattern : validation.pattern.value
-        const message = validation.pattern instanceof RegExp ? "Invalid format" : validation.pattern.message
-        if (fieldSchema instanceof z.ZodString) {
-          fieldSchema = fieldSchema.regex(pattern, message)
-        }
-      }
-
-      if (validation.validate) {
-        fieldSchema = fieldSchema.refine(
-          (value) => {
-            const result = validation.validate!(value, {} as TFieldValues)
-            return typeof result === "boolean" ? result : result === undefined
-          },
-          { message: "Custom validation failed" },
-        )
-      }
-    }
-
-    // Make optional if no required validation
-    if (!fieldConfig.validation?.required) {
-      fieldSchema = fieldSchema.optional()
-    }
-
-    schemaFields[fieldKey] = fieldSchema
-  })
-
-  return z.object(schemaFields)
-}
-
-const getFieldDefaultValue = <TFieldValues extends FieldValues>(fieldConfig: AnyFieldConfig<TFieldValues>): any => {
-  const configValue =
-    "value" in fieldConfig || "defaultValue" in fieldConfig
-      ? (fieldConfig.value ?? fieldConfig.defaultValue)
-      : undefined
-
-  // Return appropriate defaults based on field type
-  if (configValue !== undefined) return configValue
-
-  switch (fieldConfig.type) {
-    case "multiselect":
-    case "array":
-      return []
-    case "checkbox":
-    case "switch":
-      return false
-    case "slider":
-      const sliderConfig = fieldConfig as SliderFieldConfig<TFieldValues>
-      return sliderConfig.min ?? 0
-    case "group":
-      return {}
-    default:
-      return undefined
-  }
-}
-
 // --- Field Renderer ---
 interface RenderFieldProps<TFieldValues extends FieldValues> {
   fieldKey: string
@@ -407,11 +174,20 @@ const RenderField = <TFieldValues extends FieldValues>({
   fieldConfig,
   pathPrefix = "",
 }: RenderFieldProps<TFieldValues>) => {
-  const { control, formState, trigger, register } = useFormContext<TFieldValues>()
+  const { control, formState, trigger, register, unregister } = useFormContext<TFieldValues>()
   const fullPath = (pathPrefix ? `${pathPrefix}.${fieldKey}` : fieldKey) as FormFieldPath<TFieldValues>
   const { inputClassName } = React.useContext(FormItemContext)
 
-  if (fieldConfig.hidden) return null
+  const allValues = useWatch({ control })
+  const isVisible = fieldConfig.conditions ? evaluateCondition(fieldConfig.conditions, allValues as Record<string, any>) : true
+
+  React.useEffect(() => {
+    if (!isVisible && fieldConfig.conditions) {
+      unregister(fullPath)
+    }
+  }, [isVisible])
+
+  if (fieldConfig.hidden || !isVisible) return null
 
   const labelConfig = fieldConfig.label
   const error = formState.errors[fullPath]
@@ -537,20 +313,22 @@ const RenderField = <TFieldValues extends FieldValues>({
       }
 
       case "multiselect":
-        const multiselectConfig = fieldConfig as MultiselectFieldConfig<TFieldValues>
+        const { type, label, validation, ...fieldProps } = fieldConfig
         return (
           <Controller
             name={fullPath}
             control={control}
-            defaultValue={defaultValue as any}
+            defaultValue={defaultValue}
             render={({ field }) => (
-              <select {...field} {...commonProps} id={fullPath} multiple value={field.value || []}>
-                {multiselectConfig.options.map((option: any) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <MultiSelect
+                modal={true}
+                {...field}
+                {...commonProps}
+                {...fieldProps}
+                defaultValue={defaultValue}
+                onValueChange={(value) => field.onChange(value)}
+                popoverClassName="w-[var(--radix-popover-trigger-width)]"
+              />
             )}
           />
         )
@@ -577,7 +355,7 @@ const RenderField = <TFieldValues extends FieldValues>({
         )
 
       case "switch":
-        const switchConfig = fieldConfig as SwitchFieldConfig<TFieldValues>
+        const switchConfig = fieldConfig as any
         return (
           <Controller
             name={fullPath}
@@ -596,7 +374,7 @@ const RenderField = <TFieldValues extends FieldValues>({
         )
 
       case "radio":
-        const radioConfig = fieldConfig as RadioFieldConfig<TFieldValues>
+        const radioConfig = fieldConfig as any
         return (
           <Controller
             name={fullPath}
@@ -652,23 +430,45 @@ const RenderField = <TFieldValues extends FieldValues>({
           />
         )
 
-      // case "datePicker":
-      //   return (
-      //     <Controller
-      //       name={fullPath}
-      //       control={control}
-      //       defaultValue={defaultValue as any}
-      //       render={({ field }) => (
-      //         <input
-      //           {...field}
-      //           {...commonProps}
-      //           id={fullPath}
-      //           type="date"
-      //           value={field.value instanceof Date ? field.value.toISOString().split("T")[0] : field.value}
-      //         />
-      //       )}
-      //     />
-      //   )
+      case "date_picker": {
+        const { type, label, validation, ...fieldProps } = fieldConfig
+        return (
+          <Controller
+            name={fullPath}
+            control={control}
+            defaultValue={defaultValue as any}
+            render={({ field }) => {
+              const dateValue = field.value ? new Date(field.value) : undefined
+              const timeString =
+                dateValue && !isNaN(dateValue.getTime())
+                  ? `${dateValue.getHours().toString().padStart(2, "0")}:${dateValue.getMinutes().toString().padStart(2, "0")}`
+                  : undefined
+              return (
+                <DatePicker
+                  {...fieldProps}
+                  {...field}
+                  mode="single"
+                  modal
+                  selected={dateValue}
+                  onSelect={(date: Date | undefined) => {
+                    field.onChange(date)
+                  }}
+                  showTimeInput
+                  onTimeChange={(time) => {
+                    const [hours, minutes] = time.split(":").map(Number)
+                    const currentDate = field.value ? new Date(field.value) : new Date()
+                    if (!isNaN(hours) && !isNaN(minutes)) {
+                      currentDate.setHours(hours, minutes)
+                      field.onChange(new Date(currentDate))
+                    }
+                  }}
+                  timeValue={timeString}
+                />
+              )
+            }}
+          />
+        )
+      }
 
       case "time_picker":
         return (
@@ -683,16 +483,12 @@ const RenderField = <TFieldValues extends FieldValues>({
       case "group":
         const groupConfig = fieldConfig as GroupFieldConfig<TFieldValues, any>
         return (
-          <div className={cn("p-4 border rounded", groupConfig.layout === "horizontal" && "flex space-x-4")}>
-            {Object.entries(groupConfig.fields).map(([subFieldKey, subFieldConfig]) => (
-              <RenderField
-                key={subFieldKey}
-                fieldKey={subFieldKey}
-                fieldConfig={subFieldConfig as AnyFieldConfig<TFieldValues>}
-                pathPrefix={fullPath}
-              />
-            ))}
-          </div>
+          <GroupField
+            fieldKey={fieldKey}
+            fieldConfig={groupConfig}
+            pathPrefix={pathPrefix}
+            renderField={RenderField}
+          />
         )
 
       case "array":
@@ -710,14 +506,44 @@ const RenderField = <TFieldValues extends FieldValues>({
           <div className="w-full">
             {fieldArrayItems.map((item, index) => (
               <div key={item.id} className="p-2 border rounded relative space-y-4 group/option">
-                {Object.entries(arrayConfig.itemConfig).map(([subFieldKey, subFieldConfig]) => (
-                  <RenderField
-                    key={subFieldKey}
-                    fieldKey={subFieldKey}
-                    fieldConfig={subFieldConfig as AnyFieldConfig<TFieldValues>}
-                    pathPrefix={`${fullPath}.${index}`}
-                  />
-                ))}
+                {arrayConfig.itemLayouts
+                  ? (() => {
+                      const layoutKeys = arrayConfig.itemLayouts.flat()
+                      const remainingKeys = Object.keys(arrayConfig.itemConfig).filter((k) => !layoutKeys.includes(k))
+                      return (
+                        <>
+                          {arrayConfig.itemLayouts.map((row, rowIndex) => (
+                            <div key={rowIndex} className="flex flex-row gap-3 w-full">
+                              {row.map((subFieldKey) => (
+                                <div key={subFieldKey} className="flex-1 min-w-0">
+                                  <RenderField
+                                    fieldKey={subFieldKey}
+                                    fieldConfig={arrayConfig.itemConfig[subFieldKey] as AnyFieldConfig<TFieldValues>}
+                                    pathPrefix={`${fullPath}.${index}`}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                          {remainingKeys.map((subFieldKey) => (
+                            <RenderField
+                              key={subFieldKey}
+                              fieldKey={subFieldKey}
+                              fieldConfig={arrayConfig.itemConfig[subFieldKey] as AnyFieldConfig<TFieldValues>}
+                              pathPrefix={`${fullPath}.${index}`}
+                            />
+                          ))}
+                        </>
+                      )
+                    })()
+                  : Object.entries(arrayConfig.itemConfig).map(([subFieldKey, subFieldConfig]) => (
+                      <RenderField
+                        key={subFieldKey}
+                        fieldKey={subFieldKey}
+                        fieldConfig={subFieldConfig as AnyFieldConfig<TFieldValues>}
+                        pathPrefix={`${fullPath}.${index}`}
+                      />
+                    ))}
 
                 <Button
                   type="button"
@@ -752,6 +578,28 @@ const RenderField = <TFieldValues extends FieldValues>({
           </div>
         )
 
+      case "tiptap_editor": {
+        const { type, label, validation, defaultValue: _dv, value: _v, disabled: _disabled, hidden: _hidden, className: _cls, description: _desc, shouldUnregister: _su, deps: _deps, action: _action, ...editorProps } =
+          fieldConfig as TiptapEditorFieldConfig<TFieldValues>
+        return (
+          <Controller
+            name={fullPath}
+            control={control}
+            defaultValue={defaultValue}
+            render={({ field }) => (
+              <React.Suspense fallback={<div className="h-32 animate-pulse rounded-md bg-muted" />}>
+                <TiptapEditor
+                  {...editorProps}
+                  initialValue={(field.value as any)?.markdown ?? (field.value as any)?.json ?? (field.value as any)?.html ?? ""}
+                  contentType={editorProps.contentType ?? "markdown"}
+                  onChange={(content) => field.onChange(content)}
+                />
+              </React.Suspense>
+            )}
+          />
+        )
+      }
+
       case "info":
         const infoConfig = fieldConfig as InfoFieldConfig<TFieldValues>
         return <InfoComponent message={infoConfig.message} variant={infoConfig.variant} title={infoConfig.title} />
@@ -763,10 +611,31 @@ const RenderField = <TFieldValues extends FieldValues>({
 
   const { position = "top" } = labelConfig || {}
 
+  if (position === "right") {
+    return (
+      <div className={cn("flex gap-3", fieldConfig.className)}>
+        <div className="flex items-center">
+          {renderFieldInput()}
+          {fieldConfig.action?.placement === "field_end" && renderAction()}
+        </div>
+        <div className="flex flex-col justify-center">
+          <div className="flex justify-between items-center">
+            {renderLabel()}
+            {fieldConfig.action?.placement === "label_end" && renderAction()}
+          </div>
+          {fieldConfig.description && (
+            <p className="text-sm text-muted-foreground mt-1">{fieldConfig.description}</p>
+          )}
+          <FormMessage fieldName={fullPath} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <FormItem className={fieldConfig.className} position={position}>
       <div className={cn("flex justify-between items-center", position === "left" && "col-span-2")}>
-        {/* position !== "bottom" && position !== "right" && */ renderLabel()}
+        {renderLabel()}
         {fieldConfig.action?.placement === "label_end" && renderAction()}
       </div>
       <div className={cn("flex items-center space-x-2", position === "left" && "col-span-10")}>
@@ -802,28 +671,31 @@ export const Form = <TFieldValues extends FieldValues = Record<string, any>>({
   labelClassName,
   inputClassName,
   submitButton,
+  afterSubmit = "keep",
 }: FormProps<TFieldValues>) => {
   // Generate Zod schema from config
   const zodSchema = React.useMemo(() => generateZodSchema(config.fields), [config.fields])
 
   // Create form methods with Zod resolver
   const internalMethods = useForm<TFieldValues>({
-    resolver: zodResolver(zodSchema),
+    resolver: zodResolver(zodSchema as any),
     defaultValues,
+    // defaultValues: config.flattenFormValues && defaultValues ? unflattenObject(defaultValues) : defaultValues,
     mode: config.mode || "onChange",
     reValidateMode: config.reValidateMode || "onChange",
     shouldFocusError: config.shouldFocusError ?? true,
   })
 
   const methods = providedMethods || internalMethods
-  const { handleSubmit, formState, watch, reset } = methods
+  const { handleSubmit, formState, watch, reset, setError } = methods
 
   // Watch for changes
   React.useEffect(() => {
     if (!onChange) return
     const subscription = watch((values, { name, type }) => {
       if (type === "change") {
-        onChange(values as Partial<TFieldValues>, name as FormFieldPath<TFieldValues>)
+        const processedValues = config.unflattenFormValues ? unflattenObject(values as Record<string, any>) : values
+        onChange(processedValues as Partial<TFieldValues>, name as FormFieldPath<TFieldValues>)
       }
     })
     return () => subscription.unsubscribe()
@@ -831,10 +703,14 @@ export const Form = <TFieldValues extends FieldValues = Record<string, any>>({
 
   const handleFormSubmit = async (data: TFieldValues) => {
     try {
-      const response = await onSubmit?.(data)
+      const processedData = config.unflattenFormValues ? unflattenObject(data) : data
+      const response = await onSubmit?.(processedData as TFieldValues)
       onSuccess?.(response)
-      reset()
+      if (afterSubmit === "reset") reset(defaultValues)
+      else if (afterSubmit === "clear") reset()
     } catch (error: any) {
+      const message = error?.message || "Something went wrong"
+      setError("root", { message })
       onError?.(error)
     }
   }
@@ -846,7 +722,7 @@ export const Form = <TFieldValues extends FieldValues = Record<string, any>>({
       <FormItemContext.Provider value={{ fieldClassName, labelClassName, inputClassName }}>
         <form
           onSubmit={onSubmit ? handleSubmit(handleFormSubmit) : (e) => e.preventDefault()}
-          className={cn("space-y-6", className)}
+          className={cn("space-y-6 px-2", className)}
         >
           {config.title && <h2 className="text-xl font-semibold">{config.title}</h2>}
           {config.description && <p className="text-sm text-gray-600 mb-4">{config.description}</p>}
@@ -858,20 +734,40 @@ export const Form = <TFieldValues extends FieldValues = Record<string, any>>({
               config.layout === "grid" && "grid grid-cols-2 gap-4",
             )}
           >
-            {fieldOrder.map((fieldKey) => {
-              const fieldConfig = config.fields[fieldKey as string]
-              if (!fieldConfig) {
-                console.warn(`Form: No configuration found for field "${String(fieldKey)}"`)
-                return null
-              }
-              return (
-                <RenderField<TFieldValues>
-                  key={String(fieldKey)}
-                  fieldKey={String(fieldKey)}
-                  fieldConfig={fieldConfig}
-                />
-              )
-            })}
+            {config.layouts
+              ? config.layouts.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex flex-row gap-4 w-full">
+                    {row.map((fieldKey) => {
+                      const fieldConfig = config.fields[fieldKey]
+                      if (!fieldConfig) {
+                        console.warn(`Form: No configuration found for field "${fieldKey}"`)
+                        return null
+                      }
+                      return (
+                        <div key={fieldKey} className="flex-1 min-w-0">
+                          <RenderField<TFieldValues>
+                            fieldKey={fieldKey}
+                            fieldConfig={fieldConfig}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))
+              : fieldOrder.map((fieldKey) => {
+                  const fieldConfig = config.fields[fieldKey as string]
+                  if (!fieldConfig) {
+                    console.warn(`Form: No configuration found for field "${String(fieldKey)}"`)
+                    return null
+                  }
+                  return (
+                    <RenderField<TFieldValues>
+                      key={String(fieldKey)}
+                      fieldKey={String(fieldKey)}
+                      fieldConfig={fieldConfig}
+                    />
+                  )
+                })}
           </div>
 
           <FormMessage />

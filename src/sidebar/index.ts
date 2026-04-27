@@ -1,3 +1,3 @@
-export { Sidebar } from './sidebar'
-export { SideNavMain  } from './sidenav-menu'
-export type * from './types'
+export * from "./sidebar"
+export * from "./sidenav-menu"
+export * from "./types"

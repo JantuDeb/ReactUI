@@ -1,252 +1,417 @@
+import { type EditorProps as TiptapEditorProps, type OnChangeParams as TiptapOnChangeParams } from "tiptap-editor-library/dist/components/editor"
 import { ButtonProps } from "../buttons/button"
-import { MenuOption, MenuOptions } from "../types/menu-option"
-import { Options } from "../types/option"
+import { FileInputProps } from "../file-upload/file-input"
+import { MarkdownInputProps } from "../inputs/markdown-input"
+import { RadioGroupStyledProps } from "../inputs/radio-group"
+import { SelectStyledProps } from "../inputs/select"
+import { MenuOptions } from "../types/menu-option"
 import React from "react"
-import { FieldValues, UseFormReturn, DeepPartial, RegisterOptions, FieldPath, DefaultValues } from "react-hook-form"
+import { FieldValues, UseFormReturn, DefaultValues, Control, FieldError } from "react-hook-form"
 
-// --- Helper & External Component Placeholder Types ---
+// === UTILITY TYPES ===
 export type Size = "xs" | "sm" | "md" | "lg"
 
-export interface LabelProps {
-  children?: React.ReactNode
-  className?: string
-  htmlFor?: string
+// Deep path type for nested field access
+export type DeepKeys<T> =
+  T extends ReadonlyArray<infer U>
+    ? `${number}` | `${number}.${DeepKeys<U>}`
+    : T extends Record<string, any>
+      ? {
+          [K in keyof T]: K extends string
+            ? T[K] extends Record<string, any>
+              ? `${K}` | `${K}.${DeepKeys<T[K]>}`
+              : `${K}`
+            : never
+        }[keyof T]
+      : never
+
+export type FormFieldPath<T extends FieldValues> = DeepKeys<T> extends infer P ? (P extends string ? P : never) : never
+
+// === COMPONENT PROP INTERFACES ===
+export interface FormLabel {
+  title: string
   position?: "top" | "left" | "right" | "bottom"
-  text?: string // From LabelConfig
+  className?: string
+  required?: boolean
+  description?: string
 }
 
-export interface AlertVariantsProps {
-  // For InfoFieldConfig
+export interface AlertConfig {
   variant?: "info" | "warning" | "error" | "success"
   title?: string
-  // description prop is already on BaseFieldConfig
-  // message?: string | React.ReactNode; // Added to InfoFieldConfigSchema directly
+  message?: string | React.ReactNode
 }
 
-export interface Behavior {
-  // Placeholder
-  condition: (formValues: Record<string, any>) => boolean
-  action: (methods: UseFormReturn<any>) => void // Example action
+export interface ValidationRule<ValueType> {
+  value: ValueType
+  message: string
 }
 
-// --- RHF Validation Mapping ---
-export interface ValidationRule<TValue, TMessage = string> {
-  value: TValue
-  message: TMessage
-}
-
-export interface Validation {
-  required?: boolean | string
+export interface ValidationConfig<TFormValues extends FieldValues = FieldValues> {
+  required?: boolean | ValidationRule<boolean>
   min?: number | ValidationRule<number>
   max?: number | ValidationRule<number>
   minLength?: number | ValidationRule<number>
   maxLength?: number | ValidationRule<number>
-  pattern?: RegExp | ValidationRule<RegExp>
-  validate?: (
-    value: any,
-    formValues: Record<string, any>, // Pass all form values for context
-  ) => boolean | string | Promise<boolean | string>
-  // Add other RHF-compatible validation rules as needed
+  pattern?: RegExp | { value: RegExp; message: string }
+  validate?: (value: any, formValues: TFormValues) => boolean | string | Promise<boolean | string>
 }
 
-// --- Core Form & Field Types ---
-export type FieldType =
-  | "input"
-  | "textarea"
-  | "multi_input" // Needs a custom component, likely managing an array of strings/objects
-  | "checkbox" // Single boolean checkbox
-  | "chips" // Multi-select, value is likely string[] or Option[]
-  | "radio" // Single select from options
-  | "checkboxes" // Multiple selections from options, value is likely string[] or Option[]
-  | "listbox" // Single select dropdown (like Radix Select)
-  | "combobox" // Select dropdown with search/create capabilities
-  | "group" // Nested fields structure
-  | "multi_group" // Array of nested field structures (useFieldArray)
-  | "color_picker"
-  | "multi_color_picker" // Could be an array of colors or a component managing multiple pickers
-  | "mentions" // Text input with @mention capabilities
-  | "range" // Slider input
-  | "info" // Non-interactive, display-only informational text/alert
-
-export type FieldValue =
-  | undefined
-  | null
-  | number
-  | string
-  | boolean
-  | Array<string | number | MenuOption> // For multi-select type fields
-  | GroupFieldValue
-  | MultiGroupFieldValue
-
-export type GroupFieldValue = { [key: string]: FieldValue }
-export type MultiGroupFieldValue = GroupFieldValue[] // Array of groups
-
-export type FieldAction = {
+export interface FieldActionConfig<TFormValues extends FieldValues = FieldValues> {
   label: string
   placement: "label_end" | "field_end"
   variant?: ButtonProps["variant"]
   size?: ButtonProps["size"]
-  // onClick needs RHF methods and the specific field name (path)
-  onClick: (methods: UseFormReturn<any>, fieldName: string) => void
-  validateOnClick?: boolean // If true, might trigger validation for the field on click
+  onClick: (methods: UseFormReturn<TFormValues>, fieldPath: FormFieldPath<TFormValues>) => void | Promise<void>
+  validateOnClick?: boolean
 }
 
-// Base configuration for all fields
-// TFormValues is the type of the entire form's values
-// Using a generic here allows for better type inference for `validation.validate`'s `formValues` param
-export interface BaseFieldConfigSchema<TFormValues extends FieldValues = FieldValues> {
-  element: FieldType // Discriminator
-  type?: React.HTMLInputTypeAttribute // For input element
-  label?: Omit<LabelProps, "htmlFor" | "children"> & { text: string } // 'text' is required for label
-  // `value` prop here is for *initial* value for a single field. RHF `defaultValues` at form level is preferred.
-  // For Controller, this 'value' can act as its 'defaultValue' prop.
+// === CONDITIONAL VISIBILITY ===
+export type FieldConditionOperator = "eq" | "neq" | "in" | "nin" | "gt" | "gte" | "lt" | "lte" | "empty" | "notempty"
+
+export interface FieldConditionRule {
+  field: string
+  operator: FieldConditionOperator
   value?: any
-  invisible?: boolean
-  disabled?: boolean
+}
+
+export type FieldCondition =
+  | FieldConditionRule
+  | { and: FieldCondition[] }
+  | { or: FieldCondition[] }
+  | { not: FieldCondition }
+
+// === BASE FIELD CONFIG ===
+export interface BaseFieldConfig<TFormValues extends FieldValues = FieldValues> {
+  // Core properties
+  type: FieldType
+  label?: FormLabel
   placeholder?: string
-  validation?: Validation
-  debounce?: boolean | number // RHF doesn't handle debounce directly on register; custom component or logic needed.
-  action?: FieldAction
-  description?: string // Help text displayed under the field
-  className?: string // For the FormItem wrapper div
-  inputClassName?: string // For the actual input/select/custom component
+  description?: string
+  disabled?: boolean
+  hidden?: boolean
+  className?: string
+
+  // Declarative conditional visibility — serializable, server-config friendly
+  conditions?: FieldCondition
+
+  // Form integration (removed defaultValue)
+  validation?: ValidationConfig<TFormValues>
+  action?: FieldActionConfig<TFormValues>
+
+  // Performance
+  shouldUnregister?: boolean
+  deps?: FormFieldPath<TFormValues>[] // Dependencies for re-validation
 }
 
-// Specific field configurations using the Base
-export interface InputFieldConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "input"
+// === FIELD TYPES ===
+export type FieldType =
+  | "input"
+  | "textarea"
+  | "select"
+  | "multiselect"
+  | "checkbox"
+  | "radio"
+  | "switch"
+  | "slider"
+  | "color_picker"
+  | "date_picker"
+  | "time_picker"
+  | "group"
+  | "array"
+  | "info"
+  | "file_input"
+  | "markdown_input"
+  | "tiptap_editor"
+
+// === SPECIFIC FIELD CONFIGS ===
+export interface InputFieldConfig<TFormValues extends FieldValues = FieldValues> extends BaseFieldConfig<TFormValues> {
+  type: "input"
+  inputType?: React.HTMLInputTypeAttribute
+  prefix?: string
+  suffix?: string
+  maxLength?: number
+  defaultValue?: string | number
+  value?: string | number
 }
-export interface MultiInputFieldConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "multi_input"
-  // Example: allowDuplicates?: boolean;
+export type TiptapEditorContent = TiptapOnChangeParams
+
+export interface TiptapEditorFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues>,
+    Omit<TiptapEditorProps, "initialValue" | "onChange"> {
+  type: "tiptap_editor"
+  defaultValue?: TiptapEditorContent
+  value?: TiptapEditorContent
 }
 
-export interface TextAreaConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "textarea"
+export interface MarkdownFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues>,
+    Omit<MarkdownInputProps, "label"> {
+  type: "markdown_input"
+  maxLength?: number
+  defaultValue?: string
+  value?: string
+}
+export interface FileInputFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues>,
+    Omit<FileInputProps, "label"> {
+  type: "file_input"
+  prefix?: string
+  suffix?: string
+  // defaultValue?: UploadFile[]
+  // value?: UploadFile[]
+}
+
+export interface TextareaFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues> {
+  type: "textarea"
   rows?: number
+  cols?: number
+  resize?: "none" | "vertical" | "horizontal" | "both"
+  defaultValue?: string
+  value?: string
 }
 
-export interface CheckboxConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "checkbox"
-  // Label for the checkbox itself if different from the FormItem label
-  checkboxLabel?: string | (Omit<LabelProps, "htmlFor" | "children"> & { text: string })
-}
-
-export interface SelectionFieldConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "radio" | "chips" | "checkboxes" | "mentions"
-  options: Options
-}
-
-export interface DropDownFieldConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "listbox" | "combobox"
+export interface SelectFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues>,
+    Omit<SelectStyledProps, "onValueChange" | "onChange"> {
+  type: "select"
   options: MenuOptions
-  minItems?: number // For multi-select variants if applicable
-  maxItems?: number // For multi-select variants if applicable
-  enableReset?: boolean // For a reset button on the dropdown
-  enableSearch?: boolean // Typically true for combobox, optional for listbox
-  // isMulti?: boolean; // Useful for combobox to return array of values
+  defaultValue?: string
+  value?: string
+  //   searchable?: boolean
+  //   clearable?: boolean
+  //   createable?: boolean
 }
 
-export interface RangeInputFieldConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "range"
+export interface MultiselectFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues> {
+  type: "multiselect"
+  options: MenuOptions
+  maxItems?: number
+  defaultValue?: string[]
+  value?: string[]
+  //   searchable?: boolean
+  //   clearable?: boolean
+}
+
+export interface CheckboxFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues> {
+  type: "checkbox"
+  checkboxLabel?: string
+  defaultValue?: boolean
+  value?: boolean
+}
+
+export interface RadioFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues>,
+    Omit<RadioGroupStyledProps, "onValueChange"> {
+  type: "radio"
+  // options: Array<Option>
+  // direction?: "horizontal" | "vertical"
+  defaultValue?: string
+  value?: string
+}
+
+export interface SwitchFieldConfig<TFormValues extends FieldValues = FieldValues> extends BaseFieldConfig<TFormValues> {
+  type: "switch"
+  switchLabel?: string
+  defaultValue?: boolean
+  value?: boolean
+}
+
+export interface SliderFieldConfig<TFormValues extends FieldValues = FieldValues> extends BaseFieldConfig<TFormValues> {
+  type: "slider"
   min?: number
   max?: number
   step?: number
+  marks?: boolean
+  defaultValue?: number | [number, number] // single value or range
+  value?: number | [number, number]
 }
 
-export interface ColorPickerConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues> {
-  element: "color_picker" | "multi_color_picker"
-  // count?: number; // If multi_color_picker implies a fixed number of pickers
+export interface ColorPickerFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues> {
+  type: "color_picker"
+  format?: "hex" | "rgb" | "hsl"
+  presets?: string[]
+  defaultValue?: string
+  value?: string
 }
 
-export interface InfoFieldConfigSchema<TFormValues extends FieldValues = FieldValues>
-  extends BaseFieldConfigSchema<TFormValues>,
-    Partial<AlertVariantsProps> {
-  element: "info"
-  message?: string | React.ReactNode // Explicit message for info component
+export interface DatePickerFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues> {
+  type: "date_picker"
+  format?: string
+  minDate?: Date
+  maxDate?: Date
+  defaultValue?: Date | string
+  value?: Date | string
 }
 
-// For Group and MultiGroup, TSubFormValues represents the shape of data *within* one group instance
-export interface GroupFieldConfigSchema<
+export interface TimePickerFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues> {
+  type: "time_picker"
+  format?: "12" | "24"
+  step?: number
+  defaultValue?: string | Date
+  value?: string | Date
+}
+
+export interface InfoFieldConfig<TFormValues extends FieldValues = FieldValues>
+  extends BaseFieldConfig<TFormValues>,
+    AlertConfig {
+  type: "info"
+  // Info fields don't have values
+}
+
+// === COMPLEX FIELD CONFIGS ===
+export interface GroupFieldConfig<
   TFormValues extends FieldValues = FieldValues,
-  TSubFormValues extends GroupFieldValue = GroupFieldValue,
-> extends BaseFieldConfigSchema<TFormValues> {
-  element: "group"
-  layout?: "horizontal" | "vertical" // For styling the group layout
-  fields: FieldsMapSchema<TSubFormValues> // Fields within this group
+  TGroupValue extends Record<string, any> = Record<string, any>,
+> extends BaseFieldConfig<TFormValues> {
+  type: "group"
+  fields: FieldConfigMap<TGroupValue>
+  layout?: "horizontal" | "vertical" | "grid"
+  collapsible?: boolean
+  defaultCollapsed?: boolean
+  defaultValue?: Partial<TGroupValue>
+  value?: Partial<TGroupValue>
+  gridLayout?: {
+    cols?: number
+    spans?: Record<string, number>
+  }
 }
 
-export interface MultiGroupFieldConfigSchema<
+export interface ArrayFieldConfig<
   TFormValues extends FieldValues = FieldValues,
-  TSubFormValues extends GroupFieldValue = GroupFieldValue, // Shape of one item in the array
-> extends Omit<BaseFieldConfigSchema<TFormValues>, "value"> {
-  // Value for multi_group is an array, handled by useFieldArray
-  element: "multi_group"
-  layout?: "horizontal" | "vertical"
-  fields: FieldsMapSchema<TSubFormValues> // Template for fields in each group item
+  TItemValue extends Record<string, any> = Record<string, any>,
+> extends BaseFieldConfig<TFormValues> {
+  type: "array"
+  itemConfig: FieldConfigMap<TItemValue>
+  itemLayouts?: string[][]
   minItems?: number
   maxItems?: number
-  addItemLabel?: string
-  removeItemLabel?: string
+  addLabel?: string
+  removeLabel?: string
+  reorderable?: boolean
+  defaultValue?: TItemValue[]
+  value?: TItemValue[]
 }
 
-// Union of all possible field configurations.
-// TFormValues is passed down to allow specific configs to reference the overall form shape if needed (e.g., for validation context).
-export type AnyFieldConfigSchema<TFormValues extends FieldValues = FieldValues> =
-  | InputFieldConfigSchema<TFormValues>
-  | MultiInputFieldConfigSchema<TFormValues>
-  | TextAreaConfigSchema<TFormValues>
-  | CheckboxConfigSchema<TFormValues>
-  | SelectionFieldConfigSchema<TFormValues> // covers radio, chips, checkboxes, mentions
-  | DropDownFieldConfigSchema<TFormValues> // covers listbox, combobox
-  | RangeInputFieldConfigSchema<TFormValues>
-  | ColorPickerConfigSchema<TFormValues> // covers color_picker, multi_color_picker
-  | InfoFieldConfigSchema<TFormValues>
-  // Group and MultiGroup are more complex and might need careful handling of TSubFormValues
-  | GroupFieldConfigSchema<TFormValues, any> // Using 'any' for TSubFormValues for simplicity here, can be refined
-  | MultiGroupFieldConfigSchema<TFormValues, any> // Same 'any' for TSubFormValues
+// === UNION TYPES ===
+export type AnyFieldConfig<TFormValues extends FieldValues = FieldValues> =
+  | InputFieldConfig<TFormValues>
+  | FileInputFieldConfig<TFormValues>
+  | TextareaFieldConfig<TFormValues>
+  | SelectFieldConfig<TFormValues>
+  | MultiselectFieldConfig<TFormValues>
+  | CheckboxFieldConfig<TFormValues>
+  | RadioFieldConfig<TFormValues>
+  | SwitchFieldConfig<TFormValues>
+  | SliderFieldConfig<TFormValues>
+  | ColorPickerFieldConfig<TFormValues>
+  | DatePickerFieldConfig<TFormValues>
+  | TimePickerFieldConfig<TFormValues>
+  | GroupFieldConfig<TFormValues, any>
+  | ArrayFieldConfig<TFormValues, any>
+  | InfoFieldConfig<TFormValues>
+  | MarkdownFieldConfig<TFormValues>
+  | TiptapEditorFieldConfig<TFormValues>
 
-// Defines the structure for the 'fields' object in FormConfig.
-// Keys are field names (paths for RHF), values are their specific configurations.
-export type FieldsMapSchema<TFormValues extends FieldValues = FieldValues> = {
-  // This provides stricter typing if TFormValues has known keys.
-  // [P in keyof TFormValues]?: AnyFieldConfigSchema<TFormValues>; // This can be too restrictive if fields map doesn't cover all TFormValues
-  //} & {
-  // Allows arbitrary string keys, essential for dynamically defined forms or when TFormValues is Record<string, any>.
-  [key: string]: AnyFieldConfigSchema<TFormValues>
+export type FieldConfigMap<TFormValues extends FieldValues = FieldValues> = {
+  [K in keyof TFormValues]?: AnyFieldConfig<TFormValues>
+} & {
+  [key: string]: AnyFieldConfig<TFormValues>
 }
 
-// Form-level configuration
+// === FORM CONFIG ===
 export interface FormConfig<TFormValues extends FieldValues = FieldValues> {
-  fields: FieldsMapSchema<TFormValues>
-  order?: (keyof TFormValues | string)[] // Order of top-level fields for rendering
-  behaviors?: Behavior[] // For dynamic form behaviors based on conditions
-  title?: string // Optional title for the form
-  description?: string // Optional description for the form
+  fields: FieldConfigMap<TFormValues>
+  fieldOrder?: (keyof TFormValues)[]
+  layouts?: string[][]
+  title?: string
+  description?: string
+  layout?: "vertical" | "horizontal" | "grid"
+
+  // Performance options
+  mode?: "onChange" | "onBlur" | "onSubmit" | "onTouched" | "all"
+  reValidateMode?: "onChange" | "onBlur" | "onSubmit"
+  shouldFocusError?: boolean
+  delayError?: number
+  unflattenFormValues?: boolean
 }
 
-// Props for the main RHF-driven Form component
-export interface FormProps<TFormValues extends FieldValues = Record<string, any>> {
-  formConfig: FormConfig<TFormValues>
-  formMethods?: UseFormReturn<TFormValues> // Allow passing external form methods
+// === FORM PROPS ===
+export interface FormProps<TFormValues extends FieldValues = FieldValues> {
+  config: FormConfig<TFormValues>
+
+  // Form methods (controlled mode)
+  methods?: UseFormReturn<TFormValues>
+
+  // Uncontrolled mode
   defaultValues?: DefaultValues<TFormValues>
-  onValuesChange?: (values: TFormValues, changedFieldName?: FieldPath<TFormValues>) => void
-  submitButtonText?: string
-  submitButtonClassName?: string
-  className?: string // ClassName for the <form> element
-  // Global default classNames for form elements, can be overridden by individual field configs
-  formItemClassName?: string
-  formLabelClassName?: string
-  formInputClassName?: string
-  onSubmit: (data: TFormValues) => Promise<any> // or more specific response type
-  onSuccess?: (response: any, values: TFormValues) => void
-  onError?: (error: any, values: TFormValues) => void
+
+  // Event handlers
+  onSubmit?: (data: TFormValues) => void | Promise<any>
+  onChange?: (data: Partial<TFormValues>, changedField?: FormFieldPath<TFormValues>) => void
+  onError?: (errors: Error) => void
+  onSuccess?: (reponse: any) => void
+
+  // UI customization
+  className?: string
+  fieldClassName?: string
+  labelClassName?: string
+  inputClassName?: string
+
+  // Submit button
+  submitButton?:
+    | {
+        text?: string
+        className?: string
+        loading?: boolean
+        disabled?: boolean
+      }
+    | false
+
+  // Post-submit behaviour: "reset" restores defaultValues, "clear" empties all fields, "keep" (default) leaves form as-is
+  afterSubmit?: "reset" | "clear" | "keep"
+
+  // Performance
+  shouldUnregister?: boolean
+}
+
+// === FIELD RENDERER PROPS ===
+export interface FieldRendererProps<TFormValues extends FieldValues = FieldValues> {
+  name: FormFieldPath<TFormValues>
+  config: AnyFieldConfig<TFormValues>
+  control: Control<TFormValues>
+  disabled?: boolean
+  className?: string
+
+  // For nested fields
+  pathPrefix?: string
+  level?: number
+}
+
+// Base renderer props that work with RHF's Control variance
+export interface BaseFieldRendererProps {
+  name: string
+  control: Control<any>
+  disabled?: boolean
+  className?: string
+  pathPrefix?: string
+  level?: number
+}
+
+// === FORM CONTEXT ===
+export interface FormContextValue<TFormValues extends FieldValues = FieldValues> {
+  methods: UseFormReturn<TFormValues>
+  config: FormConfig<TFormValues>
+  disabled?: boolean
+
+  // Style context
+  fieldClassName?: string
+  labelClassName?: string
+  inputClassName?: string
 }

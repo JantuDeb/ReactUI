@@ -1,14 +1,17 @@
 import React, { ComponentProps } from "react"
-import { Button, ButtonProps, ButtonVariantProps } from "./button"
-import { Link as ReactRouterLink } from "@tanstack/react-router"
+import { Button, ButtonVariantProps } from "./button"
 
-export type LinkButtonProps = ComponentProps<typeof ReactRouterLink> & Omit<ButtonVariantProps, "asChild">
+export type LinkButtonProps<C extends React.ElementType = "a"> = Omit<ButtonVariantProps, "asChild"> &
+  ComponentProps<C> & {
+    as?: C
+  }
 
-const Link = (props: LinkButtonProps) => {
-  const { variant = "link", size, className, tooltip, children, ...linkProps } = props
+function Link<C extends React.ElementType = "a">(props: LinkButtonProps<C>) {
+  const { variant = "link", size, className, tooltip, children, as, ...linkProps } = props
+  const Comp = as || "a"
   return (
     <Button {...{ variant, size: "none", className, tooltip }} asChild>
-      <ReactRouterLink {...linkProps}>{children}</ReactRouterLink>
+      <Comp {...linkProps}>{children}</Comp>
     </Button>
   )
 }

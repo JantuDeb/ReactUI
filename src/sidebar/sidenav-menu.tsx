@@ -9,20 +9,24 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from "./sidebar"
-import { Link as ReactRouterLink } from "@tanstack/react-router"
 import { SidebarOption, SidebarOptions } from "./types"
 import useIsMobile from "../hooks/useIsMobile"
 import DropdownMenu from "../menus/dropdown-menu"
-import { Fragment } from "react"
+import { Fragment, ElementType } from "react"
 
 export function SideNavMain({
   items,
   onMenuOptionSelect,
+  pathname,
+  linkComponent: LinkComp = "a",
 }: {
   items: SidebarOptions
   onMenuOptionSelect?: (id: string) => void
+  pathname: string
+  linkComponent?: ElementType
 }) {
   const isMobile = useIsMobile()
+
   const renderMenuItem = (item: SidebarOption) => {
     switch (item.type) {
       case "dropdown":
@@ -75,17 +79,21 @@ export function SideNavMain({
             </SidebarMenu>
           </SidebarHeader>
         )
-      case "item":
+      case undefined:
+      case "item": {
+        const hrefPath = item.href.split("?")[0]
+        const active = item.isActive ?? (pathname === hrefPath || pathname.startsWith(hrefPath + "/"))
         return (
           <SidebarMenuItem key={item.key}>
-            <SidebarMenuButton asChild tooltip={item.label} isActive={item.isActive}>
-              <ReactRouterLink to={item.href} className={item.disabled ? "pointer-events-none opacity-50" : ""}>
+            <SidebarMenuButton asChild tooltip={item.label} isActive={active}>
+              <LinkComp href={item.href} className={item.disabled ? "pointer-events-none opacity-50" : ""}>
                 {item.icon}
                 <span>{item.label}</span>
-              </ReactRouterLink>
+              </LinkComp>
             </SidebarMenuButton>
           </SidebarMenuItem>
         )
+      }
 
       case "submenu":
         return (
@@ -143,4 +151,3 @@ export function SideNavMain({
 
   return <>{items.map(renderMenuItem)}</>
 }
-

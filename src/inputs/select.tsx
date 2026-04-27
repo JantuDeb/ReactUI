@@ -151,6 +151,7 @@ interface SelectProps {
   className?: string
   width?: "full" | "fit"
   portal?: boolean
+  size?: "sm" | "default"
 }
 
 export type SelectStyledProps = SelectProps &
@@ -163,6 +164,7 @@ const SelectStyled = ({
   className,
   width,
   portal,
+  size,
   position,
   showScrollDown,
   showScrollUp,
@@ -197,6 +199,7 @@ const SelectStyled = ({
   return (
     <Select {...selectProps}>
       <SelectTrigger
+        size={size}
         className={cn(
           {
             "w-[var(--radix-select-trigger-width)]": width === "full",

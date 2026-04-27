@@ -1,4 +1,3 @@
-import { type ReactNode, type JSX } from "react"
 import {
   createRow as _createRow,
   flexRender as _flexRender,
@@ -13,11 +12,12 @@ import {
   type TTableInstance,
 } from "../types"
 import { getAllLeafColumnDefs, getColumnId } from "./column.utils"
+import React, { ReactNode } from "react"
 
 export const flexRender = _flexRender as (
   Comp: Renderable<any>,
   props: any,
-) => JSX.Element | ReactNode
+) => React.ReactElement | ReactNode
 
 export function createColumnHelper<
   TData extends TRowData,

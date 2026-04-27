@@ -27,6 +27,7 @@ type SidePanelProps = {
   onActionClick?: (actionId: string) => void
   trigger?: React.ReactNode
   showCloseIcon?: boolean
+  showCloseButton?: boolean
 } & DialogProps &
   SheetContentProps
 
@@ -48,6 +49,7 @@ export function SidePanel({
   className,
   trigger,
   showCloseIcon,
+  showCloseButton,
   ...contentProps
 }: SidePanelProps) {
   const handleActionClick = (action: SidePanelAction) => {
@@ -60,12 +62,19 @@ export function SidePanel({
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal} defaultOpen={defaultOpen}>
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-      <SheetContent className="py-2 px-4" {...contentProps}>
+      <SheetContent className="p-2" showCloseButton={showCloseIcon || showCloseButton} {...contentProps}>
         <SheetHeader className="border-b pb-2">
           {header && <SheetTitle>{header}</SheetTitle>}
           {description && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
-        <div className={cn("flex-1 overflow-y-auto", className)}>{children}</div>
+        <div
+          className={cn("flex-1 overflow-y-auto scroll-smooth", className)}
+          style={{
+            scrollbarGutter: "stable",
+          }}
+        >
+          {children}
+        </div>
         {actions.length > 0 && (
           <SheetFooter className={ORIENTATION_CLASSES[actionsOrientation]}>
             {actions.map((action) => (

@@ -57,7 +57,7 @@ const TabGroup = ({
       </TabsList>
 
       {/* Content panels are rendered here */}
-      <div className="mt-2 w-full">{children}</div>
+      {children && <div className="mt-2 w-full">{children}</div>}
     </Tabs>
   )
 }

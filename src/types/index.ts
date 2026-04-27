@@ -1,2 +1,2 @@
-export type { MenuOption } from './menu-option'
-export type { Option } from './option'
+export * from "./menu-option"
+export * from "./option"

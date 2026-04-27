@@ -2,7 +2,7 @@ import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { CheckIcon, MinusIcon } from "lucide-react"
 import { cn } from "../lib/utils"
-import { FormLabel } from "../form/types-v2"
+import { FormLabel } from "../form/types"
 import { Label } from "../form/label"
 
 export type CheckboxProps = CheckboxPrimitive.CheckboxProps

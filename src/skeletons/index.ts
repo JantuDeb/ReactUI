@@ -1,2 +1,2 @@
-export { Skeleton } from './skeleton'
-export * from './skeleton-presets'
+export * from "./skeleton"
+export * from "./skeleton-presets"
