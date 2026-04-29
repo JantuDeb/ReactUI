@@ -116,4 +116,4 @@ When making changes to this package:
 
 ## License
 
-Private - For StudyPath projects only
+- 
