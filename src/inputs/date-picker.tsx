@@ -1,5 +1,5 @@
 import { Button, ButtonProps } from "../buttons/button"
-import { Calendar, CalendarProps } from "../calender/calendar"
+import { Calendar, CalendarProps } from "../calendar/calendar"
 import { cn } from "../lib/utils"
 import { Popover, PopoverContent, PopoverProps, PopoverTrigger, PopoverContentProps } from "../popover"
 import { format } from "date-fns/format"

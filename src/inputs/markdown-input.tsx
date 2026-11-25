@@ -13,7 +13,7 @@ import "katex/dist/katex.min.css"
 import "@uiw/react-md-editor/markdown-editor.css"
 import { cn } from "../lib/utils"
 import Spinner from "../loaders/spinner"
-import MarkdownView from "../react-mardown"
+import MarkdownView from "../react-markdown"
 import { FileInput, FileInputProps } from "../file-upload/file-input"
 import { Modal } from "../dialogs/modal"
 // Types

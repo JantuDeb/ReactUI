@@ -4,7 +4,7 @@
  *
  * NEVER inject these strings with dangerouslySetInnerHTML — they come from the database.
  * Use `toPlainPreview` for plain-text contexts, or `<InlineMarkdown />`
- * (src/react-mardown/inline-markdown.tsx) where a rich context allows rendered math.
+ * (src/react-markdown/inline-markdown.tsx) where a rich context allows rendered math.
  */
 
 const NAMED_ENTITIES: Record<string, string> = {

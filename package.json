@@ -23,9 +23,9 @@
       "import": "./dist/buttons/index.js",
       "types": "./dist/buttons/index.d.ts"
     },
-    "./calender": {
-      "import": "./dist/calender/index.js",
-      "types": "./dist/calender/index.d.ts"
+    "./calendar": {
+      "import": "./dist/calendar/index.js",
+      "types": "./dist/calendar/index.d.ts"
     },
     "./cards": {
       "import": "./dist/cards/index.js",
@@ -75,9 +75,9 @@
       "import": "./dist/popover/index.js",
       "types": "./dist/popover/index.d.ts"
     },
-    "./react-mardown": {
-      "import": "./dist/react-mardown/index.js",
-      "types": "./dist/react-mardown/index.d.ts"
+    "./react-markdown": {
+      "import": "./dist/react-markdown/index.js",
+      "types": "./dist/react-markdown/index.d.ts"
     },
     "./sidebar": {
       "import": "./dist/sidebar/index.js",
@@ -130,14 +130,6 @@
     "./offset-pagination": {
       "import": "./dist/offset-pagination/index.js",
       "types": "./dist/offset-pagination/index.d.ts"
-    },
-    "./calendar": {
-      "import": "./dist/calender/index.js",
-      "types": "./dist/calender/index.d.ts"
-    },
-    "./react-markdown": {
-      "import": "./dist/react-mardown/index.js",
-      "types": "./dist/react-mardown/index.d.ts"
     }
   },
   "files": [

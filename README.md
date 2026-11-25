@@ -18,7 +18,7 @@ import { Calendar } from "@jantudeb/react-ui/calendar"
 import { Form } from "@jantudeb/react-ui/form"
 ```
 
-For compatibility, `@jantudeb/react-ui/calender` and `@jantudeb/react-ui/react-mardown` remain available. New code should use the correctly spelled `calendar` and `react-markdown` subpaths.
+For compatibility, `@jantudeb/react-ui/calendar` and `@jantudeb/react-ui/react-markdown` remain available. New code should use the correctly spelled `calendar` and `react-markdown` subpaths.
 
 The package expects React 19 and Tailwind CSS with the StudyPath theme tokens available in the consuming application.
 
