@@ -5,7 +5,7 @@ const tdSelectedBg = "bg-muted"
 const tdBg = "bg-background"
 const tdSpacing = "p-2"
 const tHead =
-  "border-b text-left bg-muted/60 text-xs !font-semibold uppercase tracking-widest table-cell text-muted-foreground align-top"
+  "border-b text-left bg-table-head text-xs !font-semibold uppercase tracking-widest table-cell text-muted-foreground align-top"
 const tHeadSticky = "sticky z-20 top-0"
 const table = "w-full border-separate border rounded-lg border-spacing-0"
 

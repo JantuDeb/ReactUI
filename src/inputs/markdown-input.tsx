@@ -16,7 +16,6 @@ import Spinner from "../loaders/spinner"
 import MarkdownView from "../react-mardown"
 import { FileInput, FileInputProps } from "../file-upload/file-input"
 import { Modal } from "../dialogs/modal"
-
 // Types
 interface ImageUploadResult {
   url: string
@@ -180,7 +179,19 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
         setUploading(true)
         let result: ImageUploadResult | null = null
 
-        if (onImageUpload) {
+        if (uploadUrl) {
+          // Use the caller-provided endpoint
+          const formData = new FormData()
+          formData.append("file", file)
+          const response = await fetch(uploadUrl, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          })
+          if (!response.ok) throw new Error(`Image upload failed (${response.status})`)
+          result = (await response.json()) as ImageUploadResult
+        } else if (onImageUpload) {
+          // Fallback to onImageUpload prop
           result = await onImageUpload(file)
         } else {
           console.warn("Image upload handler not provided")

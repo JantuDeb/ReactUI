@@ -38,7 +38,7 @@ const TableBodyRow = ({
   virtualPaddingRight,
 }: TableBodyRowProps) => {
   const {
-    options: { renderRowExpandDetails, initialState },
+    options: { renderRowExpandDetails, initialState, getRowClassName },
   } = table
   const visibleCells = row.getVisibleCells()
   const overflow = initialState?.overflow || "truncate"
@@ -67,6 +67,7 @@ const TableBodyRow = ({
         className={joinClassNames(
           "table-row group",
           isRowClickable ? "cursor-pointer" : "",
+          getRowClassName?.(row.original) ?? "",
         )}
         onClick={handleRowClick}
         style={
@@ -153,6 +154,7 @@ TableBodyRowProps<TData>) => {
       enableRowPinning,
       enableStickyFooter,
       enableStickyHeader,
+      getRowClassName,
       layoutMode,
       memoMode,
       onRowClick,
@@ -292,6 +294,7 @@ TableBodyRowProps<TData>) => {
             ? "z-[10]"
             : "z-0",
           virtualRow ? "transition-none" : "transition-all ease-in-out",
+          getRowClassName?.(row.original),
         )}
         style={{
           transform: virtualRow

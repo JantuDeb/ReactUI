@@ -9,10 +9,66 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from "./sidebar"
-import { SidebarOption, SidebarOptions } from "./types"
+import { SidebarOption, SidebarOptions, SidebarGroup as SidebarGroupOption } from "./types"
 import useIsMobile from "../hooks/useIsMobile"
 import DropdownMenu from "../menus/dropdown-menu"
-import { Fragment, ElementType } from "react"
+import { Fragment, ElementType, ReactNode, useEffect, useState } from "react"
+
+/** True when any (nested) link inside the group matches the current path. */
+function groupContainsPath(children: SidebarOptions, pathname: string): boolean {
+  return children.some((child) => {
+    if ("children" in child && child.children) return groupContainsPath(child.children, pathname)
+    if ("href" in child && child.href) {
+      const hrefPath = child.href.split("?")[0]
+      return pathname === hrefPath || pathname.startsWith(hrefPath + "/")
+    }
+    return false
+  })
+}
+
+function CollapsibleGroup({
+  item,
+  pathname,
+  children,
+}: {
+  item: SidebarGroupOption
+  pathname: string
+  children: ReactNode
+}) {
+  const storageKey = `sidebar-group:${item.key}`
+  const containsActive = groupContainsPath(item.children, pathname)
+  const [open, setOpen] = useState(() => {
+    const stored = localStorage.getItem(storageKey)
+    if (stored !== null) return stored === "1" || containsActive
+    return item.defaultOpen ?? true
+  })
+
+  // Navigating into a collapsed group should reveal the active item.
+  useEffect(() => {
+    if (containsActive) setOpen(true)
+  }, [containsActive])
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        localStorage.setItem(storageKey, next ? "1" : "0")
+      }}
+      className="group/sidebar-group"
+    >
+      <SidebarGroup>
+        <SidebarGroupLabel asChild>
+          <CollapsibleTrigger className="w-full cursor-pointer">
+            {item.label}
+            <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/sidebar-group:rotate-90" />
+          </CollapsibleTrigger>
+        </SidebarGroupLabel>
+        <CollapsibleContent>{children}</CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  )
+}
 
 export function SideNavMain({
   items,
@@ -136,13 +192,21 @@ export function SideNavMain({
       case "separator":
         return <hr key={item.key} className="my-2 border-t border-muted" />
 
-      case "group":
+      case "group": {
+        if (item.collapsible && item.label) {
+          return (
+            <CollapsibleGroup key={item.key} item={item} pathname={pathname}>
+              {item.children && <SidebarMenu>{item.children.map(renderMenuItem)}</SidebarMenu>}
+            </CollapsibleGroup>
+          )
+        }
         return (
           <SidebarGroup key={item.key}>
             {item.label && <SidebarGroupLabel>{item.label}</SidebarGroupLabel>}
             {item.children && <SidebarMenu>{item.children.map(renderMenuItem)}</SidebarMenu>}
           </SidebarGroup>
         )
+      }
 
       default:
         return null

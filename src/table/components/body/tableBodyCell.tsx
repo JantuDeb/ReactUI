@@ -333,6 +333,13 @@ export const TableBodyCell = <TData extends TRowData>({
       data-pinned={!!isColumnPinned || undefined}
       tabIndex={enableKeyboardShortcuts ? 0 : undefined}
       // {...tableCellProps}
+      // The row's own click (open, navigate, edit) must not also fire for a
+      // click meant for the row's actions or its checkbox. React bubbles
+      // through portals too, so this also covers an item picked in the
+      // actions dropdown, which renders outside the table.
+      onClick={(e) => {
+        if (column.id === "row-actions" || column.id === "row-select") e.stopPropagation()
+      }}
       onKeyDown={handleKeyDown}
       onContextMenu={handleContextMenu}
       onDoubleClick={handleDoubleClick}

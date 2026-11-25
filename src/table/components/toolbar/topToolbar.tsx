@@ -29,9 +29,14 @@ export const TopToolbar = <TData extends TRowData>({ table }: TopToolbarProps<TD
       positionToolbarAlertBanner,
       positionToolbarDropZone,
       renderTopToolbarCustomActions,
+      toolbarFilters,
+      toolbarActions,
     },
     refs: { topToolbarRef },
   } = table
+
+  const filtersNode = parseFromValuesOrFunc(toolbarFilters, { table })
+  const actionsNode = parseFromValuesOrFunc(toolbarActions, { table })
 
   const { isFullScreen, showGlobalFilter } = getState()
 
@@ -70,7 +75,7 @@ export const TopToolbar = <TData extends TRowData>({ table }: TopToolbarProps<TD
       <Box
         className={cn(
           "flex items-start box-border gap-2 justify-between pt-2 pb-0 top-0 right-0 w-full",
-          stackAlertBanner ? "relative" : "absolute",
+          "relative",
         )}
       >
         {enableGlobalFilter && positionGlobalFilter === "left" && <GlobalFilterTextField {...globalFilterProps} />}
@@ -78,10 +83,16 @@ export const TopToolbar = <TData extends TRowData>({ table }: TopToolbarProps<TD
         {enableToolbarInternalActions ? (
           <Box className="flex flex-wrap-reverse gap-2 justify-end items-center">
             {enableGlobalFilter && positionGlobalFilter === "right" && <GlobalFilterTextField {...globalFilterProps} />}
+            {filtersNode}
             <ToolbarInternalButtons table={table} />
+            {actionsNode}
           </Box>
         ) : (
-          enableGlobalFilter && positionGlobalFilter === "right" && <GlobalFilterTextField {...globalFilterProps} />
+          <Box className="flex flex-wrap-reverse gap-2 justify-end items-center">
+            {enableGlobalFilter && positionGlobalFilter === "right" && <GlobalFilterTextField {...globalFilterProps} />}
+            {filtersNode}
+            {actionsNode}
+          </Box>
         )}
       </Box>
       {/* {enablePagination && ["both", "top"].includes(positionPagination ?? "") && (

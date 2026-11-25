@@ -35,4 +35,54 @@ function Badge({
   return <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />
 }
 
-export { Badge, badgeVariants }
+/**
+ * Semantic status tones shared by every table/list in the admin.
+ * Use these instead of hand-picking a Badge variant per page so the same
+ * semantic role always renders identically.
+ */
+export type StatusTone = "positive" | "negative" | "warning" | "neutral" | "info"
+
+const statusToneVariant: Record<StatusTone, VariantProps<typeof badgeVariants>["variant"]> = {
+  positive: "success",
+  negative: "destructive",
+  warning: "outline",
+  neutral: "muted",
+  info: "secondary",
+}
+
+export type StatusBadgeProps = Omit<React.ComponentProps<typeof Badge>, "variant"> & {
+  tone?: StatusTone
+}
+
+/** Badge for a semantic status value (published/pending/closed/…). */
+function StatusBadge({ tone = "neutral", ...props }: StatusBadgeProps) {
+  return <Badge variant={statusToneVariant[tone]} {...props} />
+}
+
+export type BooleanBadgeProps = Omit<React.ComponentProps<typeof Badge>, "variant" | "children"> & {
+  value: boolean | null | undefined
+  trueLabel?: string
+  falseLabel?: string
+  /** Tone used when `value` is false. Defaults to a quiet "neutral". */
+  falseTone?: StatusTone
+}
+
+/**
+ * Badge for a boolean/flag column (Featured, Enabled, Public, Active…).
+ * Always renders a badge for both states so columns stay visually aligned.
+ */
+function BooleanBadge({
+  value,
+  trueLabel = "Yes",
+  falseLabel = "No",
+  falseTone = "neutral",
+  ...props
+}: BooleanBadgeProps) {
+  return (
+    <StatusBadge tone={value ? "positive" : falseTone} {...props}>
+      {value ? trueLabel : falseLabel}
+    </StatusBadge>
+  )
+}
+
+export { Badge, badgeVariants, StatusBadge, BooleanBadge, statusToneVariant }

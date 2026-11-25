@@ -32,11 +32,8 @@ import { RadioGroupStyled } from "../inputs/radio-group"
 import { Label } from "./label"
 import { FileInput } from "../file-upload/file-input"
 import { cva } from "class-variance-authority"
-import MarkdownInput from "../inputs/markdown-input"
-const TiptapEditor = React.lazy(() =>
-  import("tiptap-editor-library").then((mod) => ({ default: mod.Editor })),
-)
-import "tiptap-editor-library/dist/tiptap-editor-library.css"
+import MarkdownInput from "../inputs/lazy-markdown-input"
+import TiptapEditor from "./lazy-tiptap-editor"
 import { Plus, Trash2 } from "lucide-react"
 import { evaluateCondition, getFieldDefaultValue, unflattenObject } from "./utils"
 import { MultiSelect } from "../inputs/multi-select"

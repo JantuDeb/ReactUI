@@ -63,6 +63,14 @@ export type SidebarGroup = {
   label?: string
   /** The array of menu options within this group. */
   children: SidebarOptions
+  /**
+   * Render the group label as a toggle that expands/collapses its items.
+   * Open state persists per `key` in localStorage; a group containing the
+   * active route opens automatically.
+   */
+  collapsible?: boolean
+  /** Initial open state when nothing is persisted yet (default true). */
+  defaultOpen?: boolean
 }
 
 // The discriminated union of all possible option types.

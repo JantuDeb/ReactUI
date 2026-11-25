@@ -1,4 +1,5 @@
 export * from "./useBreakPoints"
+export { default as useIsMobile } from "./useIsMobile"
 export * from "./useIsMobile"
 export * from "./useIsomorphicLayoutEffect"
 export * from "./useMediaQuery"

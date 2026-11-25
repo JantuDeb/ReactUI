@@ -1,4 +1,5 @@
 import { type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
+import { type LucideIcon } from "lucide-react"
 import {
   aggregationFns,
   type AccessorFn,
@@ -671,6 +672,11 @@ export interface TTableOptions<TData extends TRowData>
    * Callback fired when a table row is clicked. Makes the row appear clickable with a pointer cursor.
    */
   onRowClick?: (originalRow: TData, event: React.MouseEvent<HTMLTableRowElement>) => void
+  /**
+   * Extra class names for a body row based on its data — e.g. dim soft-deleted
+   * rows with "opacity-50". Applied on top of the default row classes.
+   */
+  getRowClassName?: (originalRow: TData) => string | undefined
   enableRowNumbers?: boolean
   enableRowOrdering?: boolean
   enableRowSelection?: ((row: TRow<TData>) => boolean) | boolean
@@ -970,6 +976,10 @@ muiTopToolbarProps?:
   onShowGlobalFilterChange?: OnChangeFn<boolean>
   onShowToolbarDropZoneChange?: OnChangeFn<boolean>
   paginationDisplayMode?: "custom" | "default" | "pages"
+  /** Noun shown in the pagination row count, e.g. "plans". Defaults to "rows". */
+  paginationLabel?: string
+  /** Page-size choices offered in the pagination footer. Defaults to [10, 25, 50, 100]. */
+  pageSizeOptions?: number[]
   positionActionsColumn?: "first" | "last"
   positionCreatingRow?: "bottom" | "top" | number
   positionExpandColumn?: "first" | "last"
@@ -1013,6 +1023,22 @@ muiTopToolbarProps?:
     row: TRow<TData>
     table: TTableInstance<TData>
   }) => ReactNode
+  /**
+   * Declarative empty state rendered inside the table shell when there are no rows.
+   * Rendered via the shared `EmptyState` primitive. When the user has an active
+   * global filter / column filter, a "no matches" variant is shown instead.
+   * For full control use `renderEmptyRowsFallback`, which takes precedence.
+   */
+  emptyState?: {
+    title: string
+    description?: string
+    icon?: LucideIcon
+    /** Primary CTA (or any action node) shown under the description. */
+    action?: ReactNode
+    /** Overrides shown when rows are hidden by an active filter/search. */
+    filteredTitle?: string
+    filteredDescription?: string
+  }
   renderEmptyRowsFallback?: (props: { table: TTableInstance<TData> }) => ReactNode
   renderGlobalFilterModeMenuItems?: (props: {
     internalFilterOptions: TInternalFilterOption[]
@@ -1044,6 +1070,18 @@ muiTopToolbarProps?:
     table: TTableInstance<TData>
   }) => ReactNode
   renderToolbarInternalActions?: (props: { table: TTableInstance<TData> }) => ReactNode
+  /**
+   * Additive toolbar slot. Unlike `renderToolbarInternalActions` (which REPLACES the built-in
+   * search / filter / column-visibility icon trio), anything returned here is rendered *before*
+   * the trio, so a page keeps search + filters + column visibility while also getting its own
+   * filters and primary action. This is the standard toolbar contract — prefer it.
+   */
+  toolbarFilters?: ((props: { table: TTableInstance<TData> }) => ReactNode) | ReactNode
+  /**
+   * Additive primary-action slot, rendered at the far right of the top toolbar after the
+   * built-in icon trio. Use for the page's "Add X" / primary CTA button.
+   */
+  toolbarActions?: ((props: { table: TTableInstance<TData> }) => ReactNode) | ReactNode
   renderTopToolbar?: ((props: { table: TTableInstance<TData> }) => ReactNode) | ReactNode
   renderTopToolbarCustomActions?: (props: { table: TTableInstance<TData> }) => ReactNode
   rowNumberDisplayMode?: "original" | "static"

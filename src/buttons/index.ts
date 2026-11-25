@@ -1,3 +1,5 @@
 export * from "./button"
+export { default as LinkButton, default as Link } from "./link"
 export * from "./link"
 export * from "./submit-button"
+export * from "./toggle-button"

@@ -4,6 +4,8 @@ import { type VirtualItem } from "@tanstack/react-virtual"
 import { memo, useMemo } from "react"
 import { useRows } from "../../hooks/useRows"
 import { useRowVirtualizer } from "../../hooks/useRowVirtualizer"
+import { Inbox, SearchX } from "lucide-react"
+import { EmptyState } from "../../../ui-states/empty-state"
 
 // type TableBodyProps = {
 //   table: RTable
@@ -99,6 +101,7 @@ export const TableBody = <TData extends TRowData>({
       localization,
       memoMode,
       // muiTableBodyProps,
+      emptyState,
       renderDetailPanel,
       renderEmptyRowsFallback,
       rowPinningDisplayMode,
@@ -183,11 +186,33 @@ export const TableBody = <TData extends TRowData>({
                 display: layoutMode?.startsWith("grid") ? "grid" : undefined,
               }}
             >
-              {renderEmptyRowsFallback?.({ table }) ?? (
-                <div className="text-secondary italic py-8 text-center w-full">
-                  {globalFilter || columnFilters.length ? "No data found" : "No records found"}
-                </div>
-              )}
+              {renderEmptyRowsFallback?.({ table }) ??
+                (() => {
+                  const isFiltered = !!globalFilter || !!columnFilters.length
+                  const {
+                    title,
+                    description,
+                    icon,
+                    action,
+                    filteredTitle,
+                    filteredDescription,
+                  } = emptyState ?? { title: "No records yet", description: "There is nothing here yet." }
+                  return (
+                    <EmptyState
+                      className="h-auto py-12"
+                      icon={isFiltered ? SearchX : (icon ?? Inbox)}
+                      title={isFiltered ? (filteredTitle ?? "No matching results") : title}
+                      description={
+                        isFiltered
+                          ? (filteredDescription ??
+                            "No rows match your current search or filters. Try clearing them to see everything.")
+                          : description
+                      }
+                    >
+                      {!isFiltered && action}
+                    </EmptyState>
+                  )
+                })()}
             </td>
           </tr>
         ) : (

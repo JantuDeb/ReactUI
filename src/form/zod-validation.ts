@@ -31,7 +31,7 @@ function assignNestedSchema(target: Record<string, z.ZodTypeAny>, path: string[]
 // --- Zod Schema Generation ---
 export const generateZodSchema = <TFieldValues extends FieldValues>(
   fields: FormConfig<TFieldValues>["fields"],
-): z.ZodSchema<any> => {
+): z.ZodObject<Record<string, z.ZodTypeAny>> => {
   const schemaFields: Record<string, z.ZodTypeAny> = {}
 
   Object.entries(fields).forEach(([fieldKey, fieldConfig]) => {

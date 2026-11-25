@@ -1,4 +1,4 @@
-import TablePagination from "@common/table/components/tablePagination"
+import TablePagination from "../tablePagination"
 import React from "react"
 
 const TableBottomToolbar = ({ table }) => {

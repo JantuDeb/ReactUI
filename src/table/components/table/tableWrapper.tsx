@@ -1,8 +1,8 @@
 import { type TRowData, type TTableInstance } from "../../types"
 import { parseFromValuesOrFunc } from "../../utils/utils"
 import { TopToolbar } from "../toolbar/topToolbar"
+import { TablePagination } from "../tablePagination"
 import { TableContainer } from "./tableContainer"
-// import { BottomToolbar } from '../toolbar/BottomToolbar';
 
 export interface TableWrapper<TData extends TRowData> {
   table: TTableInstance<TData>
@@ -13,6 +13,8 @@ export const TableWrapper = <TData extends TRowData>({ table }: TableWrapper<TDa
     getState,
     options: {
       enableBottomToolbar,
+      enablePagination,
+      positionPagination,
       enableTopToolbar,
       //   theme: { baseBackgroundColor },
       renderBottomToolbar,
@@ -32,10 +34,11 @@ export const TableWrapper = <TData extends TRowData>({ table }: TableWrapper<TDa
     >
       {enableTopToolbar && (parseFromValuesOrFunc(renderTopToolbar, { table }) ?? <TopToolbar table={table} />)}
       <TableContainer table={table} />
-      {/* {enableBottomToolbar &&
-        (parseFromValuesOrFunc(renderBottomToolbar, { table }) ?? (
-          <BottomToolbar table={table} />
-        ))} */}
+      {enableBottomToolbar &&
+        (parseFromValuesOrFunc(renderBottomToolbar, { table }) ??
+          (enablePagination && ["both", "bottom"].includes(positionPagination ?? "bottom") ? (
+            <TablePagination table={table} />
+          ) : null))}
     </div>
   )
 }

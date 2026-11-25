@@ -19,13 +19,13 @@ export const EmptyState = ({ title, description, icon: Icon, children, className
       )}
     >
       <div className="max-w-[420px] text-center flex flex-col items-center">
-        {/* Icon Container */}
+        {/* Icon Container — semantic tokens so the tile and glyph stay legible in both themes. */}
         {Icon && (
           <div className="mb-6 relative">
-            {/* Subtle glow effect for dark mode */}
+            {/* Subtle glow behind the tile */}
             <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full" />
-            <div className="relative flex items-center justify-center w-20 h-20 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl">
-              <Icon size={40} className="text-primary/80" />
+            <div className="bg-muted border-border relative flex h-20 w-20 items-center justify-center rounded-2xl border shadow-sm">
+              <Icon size={40} className="text-muted-foreground" />
             </div>
           </div>
         )}
