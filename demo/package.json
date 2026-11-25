@@ -1,0 +1,29 @@
+{
+  "name": "@jantudeb/react-ui-demo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@jantudeb/react-ui": "workspace:*",
+    "@tanstack/react-router": "^1.120.13",
+    "@tanstack/react-table": "^8.21.3",
+    "lucide-react": "^0.562.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.8",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react-swc": "^3.10.0",
+    "tailwindcss": "^4.1.8",
+    "tw-animate-css": "^1.3.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

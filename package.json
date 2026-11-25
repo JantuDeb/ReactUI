@@ -138,7 +138,9 @@
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "demo": "pnpm build && pnpm --filter @jantudeb/react-ui-demo dev",
+    "demo:build": "pnpm build && pnpm --filter @jantudeb/react-ui-demo build"
   },
   "peerDependencies": {
     "react": "^19.0.0",

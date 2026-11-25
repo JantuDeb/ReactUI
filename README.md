@@ -18,15 +18,24 @@ import { Calendar } from "@jantudeb/react-ui/calendar"
 import { Form } from "@jantudeb/react-ui/form"
 ```
 
-For compatibility, `@jantudeb/react-ui/calendar` and `@jantudeb/react-ui/react-markdown` remain available. New code should use the correctly spelled `calendar` and `react-markdown` subpaths.
-
 The package expects React 19 and Tailwind CSS with the StudyPath theme tokens available in the consuming application.
+
+## Demo app
+
+The demo uses TanStack Router for navigation and TanStack Table for a sortable data example.
+
+```bash
+pnpm install
+pnpm demo
+```
+
+The demo command builds the component package first, then starts the Vite app. Use `pnpm demo:build` to build both packages.
 
 ## Develop
 
 ```bash
-pnpm install
 pnpm build
+pnpm dev
 ```
 
-In the parent pnpm workspace, the package can be used as a Git submodule under `packages/react-ui` with a `workspace:*` dependency.
+In the parent pnpm workspace, the package can also be used as a Git submodule under `packages/react-ui` with a `workspace:*` dependency.
